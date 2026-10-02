@@ -1,0 +1,56 @@
+{
+  "app": {
+    "name": "HYDEV SE",
+    "version": "1.1.0",
+    "description": "Software Engineering Mastery Platform",
+    "author": "Aliyu Muhammad Jazuli"
+  },
+  "curriculum": {
+    "version": "1.1.0",
+    "lastUpdated": "2026-09-07",
+    "pillars": ["problemSolving", "programming", "debugging", "architecture"]
+  },
+  "mastery": {
+    "levels": {
+      "L0": { "name": "Unaware", "minScore": 0, "maxScore": 0 },
+      "L1": { "name": "Exposed / heavily guided", "minScore": 1, "maxScore": 24 },
+      "L2": { "name": "Basic guided competence", "minScore": 25, "maxScore": 49 },
+      "L3": { "name": "Independent competence", "minScore": 50, "maxScore": 74 },
+      "L4": { "name": "Strong in unfamiliar situations", "minScore": 75, "maxScore": 89 },
+      "L5": { "name": "Advanced engineering judgment", "minScore": 90, "maxScore": 100 }
+    },
+    "minPassingScore": 70
+  },
+  "experience": {
+    "basePointsPerChallenge": 50,
+    "perfectScoreMultiplier": 2,
+    "levelThreshold": 100
+  },
+  "training": {
+    "maxHistoryItems": 50,
+    "degradationRate": 0.95
+  },
+  "adaptive": {
+    "difficultyAdjustmentThreshold": 15,
+    "levelUpThreshold": 75,
+    "levelDownThreshold": 50
+  },
+  "ai": {
+    "defaultModel": "hydev-ai-local",
+    "assistanceLevels": ["A0", "A1", "A2", "A3", "A4"],
+    "assistanceLabels": {
+      "A0": "Independent",
+      "A1": "Small hint",
+      "A2": "Guided hint",
+      "A3": "Substantial guidance",
+      "A4": "Direct solution"
+    },
+    "maxHintsPerChallenge": 3,
+    "defaultBehavior": "socratic"
+  },
+  "evidence": {
+    "validationRequired": true,
+    "autoValidate": true,
+    "minEvidenceLength": 10
+  }
+}

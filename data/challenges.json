@@ -1,0 +1,65 @@
+{
+  "version": "1.0.0",
+  "challenges": [
+    {
+      "id": "hello-world",
+      "title": "Hello World",
+      "description": "Write a program that prints 'Hello, World!' to the console",
+      "pillar": "programming",
+      "level": 1,
+      "difficulty": "beginner",
+      "xp": 30,
+      "skills": ["output", "syntax", "structure"]
+    },
+    {
+      "id": "fizzbuzz",
+      "title": "FizzBuzz",
+      "description": "Print numbers 1-100, but print 'Fizz' for multiples of 3, 'Buzz' for multiples of 5, and 'FizzBuzz' for multiples of both",
+      "pillar": "programming",
+      "level": 1,
+      "difficulty": "beginner",
+      "xp": 50,
+      "skills": ["loops", "conditionals", "modulo"]
+    },
+    {
+      "id": "palindrome",
+      "title": "Palindrome Checker",
+      "description": "Write a function that checks if a given string is a palindrome",
+      "pillar": "problemSolving",
+      "level": 2,
+      "difficulty": "intermediate",
+      "xp": 70,
+      "skills": ["strings", "two-pointers", "algorithms"]
+    },
+    {
+      "id": "find-bug",
+      "title": "Find the Bug",
+      "description": "The following function is supposed to return the sum of all numbers in an array, but it has a bug. Find and fix it.",
+      "pillar": "debugging",
+      "level": 1,
+      "difficulty": "beginner",
+      "xp": 45,
+      "skills": ["error identification", "logic errors", "tracing"]
+    },
+    {
+      "id": "api-design",
+      "title": "REST API Design",
+      "description": "Design a RESTful API for a simple task management application",
+      "pillar": "architecture",
+      "level": 3,
+      "difficulty": "advanced",
+      "xp": 100,
+      "skills": ["REST", "API design", "resource modeling"]
+    },
+    {
+      "id": "binary-search",
+      "title": "Binary Search Implementation",
+      "description": "Implement the binary search algorithm to find a target value in a sorted array",
+      "pillar": "problemSolving",
+      "level": 2,
+      "difficulty": "intermediate",
+      "xp": 65,
+      "skills": ["binary search", "recursion", "arrays"]
+    }
+  ]
+}

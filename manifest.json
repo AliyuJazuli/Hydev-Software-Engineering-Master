@@ -1,0 +1,15 @@
+{
+  "id": "/index.html",
+  "name": "HYDEV SE",
+  "short_name": "HYDEV SE",
+  "description": "HYDEV Software Engineering Mastery Platform",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#101820",
+  "theme_color": "#101820",
+  "icons": [
+    { "src": "hydev-logo.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "hydev-logo.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "assets/hydev-icon-256.png", "sizes": "256x256", "type": "image/png" }
+  ]
+}

@@ -1,0 +1,803 @@
+{
+  "problemSolving": {
+    "name": "Problem Solving",
+    "icon": "\ud83e\udde9",
+    "description": "Develop systematic approaches to analyzing and solving complex problems",
+    "color": "#4361ee",
+    "levels": [
+      {
+        "level": 1,
+        "name": "Foundational",
+        "challenges": [
+          {
+            "id": "ps-01",
+            "title": "Algorithm Basics",
+            "description": "Learn fundamental algorithmic concepts and problem decomposition",
+            "difficulty": "beginner",
+            "xp": 50,
+            "skills": [
+              "logic",
+              "decomposition",
+              "pseudocode"
+            ]
+          },
+          {
+            "id": "ps-02",
+            "title": "Complexity Analysis",
+            "description": "Reason about how an algorithm's time and memory use scale with input size, using Big-O notation",
+            "difficulty": "beginner",
+            "xp": 55,
+            "skills": [
+              "time complexity",
+              "space complexity",
+              "asymptotic notation"
+            ]
+          },
+          {
+            "id": "ps-03",
+            "title": "Sorting & Searching",
+            "description": "Implement and choose between fundamental sorting and searching approaches",
+            "difficulty": "beginner",
+            "xp": 60,
+            "skills": [
+              "sorting algorithms",
+              "binary search",
+              "linear search"
+            ]
+          }
+        ]
+      },
+      {
+        "level": 2,
+        "name": "Intermediate",
+        "challenges": [
+          {
+            "id": "ps-04",
+            "title": "Linear Data Structures",
+            "description": "Model ordered data with stacks, queues, and linked lists, and choose the right one for the job",
+            "difficulty": "intermediate",
+            "xp": 70,
+            "skills": [
+              "stacks",
+              "queues",
+              "linked lists"
+            ]
+          },
+          {
+            "id": "ps-05",
+            "title": "Hash-Based Structures",
+            "description": "Use hash maps and hash sets for fast lookup, deduplication, and counting",
+            "difficulty": "intermediate",
+            "xp": 70,
+            "skills": [
+              "hash maps",
+              "hash sets",
+              "hashing"
+            ]
+          },
+          {
+            "id": "ps-06",
+            "title": "Recursion",
+            "description": "Solve problems by having a function call itself on a smaller version of the same problem",
+            "difficulty": "intermediate",
+            "xp": 75,
+            "skills": [
+              "recursion",
+              "base case",
+              "call stack"
+            ]
+          },
+          {
+            "id": "ps-07",
+            "title": "Two Pointers & Sliding Window",
+            "description": "Solve array and string problems in a single pass instead of nested loops",
+            "difficulty": "intermediate",
+            "xp": 75,
+            "skills": [
+              "two-pointers",
+              "sliding window",
+              "prefix sums"
+            ]
+          }
+        ]
+      },
+      {
+        "level": 3,
+        "name": "Advanced",
+        "challenges": [
+          {
+            "id": "ps-08",
+            "title": "Divide & Conquer",
+            "description": "Split a problem into independent subproblems, solve each, and combine the results",
+            "difficulty": "advanced",
+            "xp": 100,
+            "skills": [
+              "divide and conquer",
+              "merge sort",
+              "quicksort"
+            ]
+          },
+          {
+            "id": "ps-09",
+            "title": "Greedy Algorithms",
+            "description": "Make the locally optimal choice at each step, and prove when that's actually correct",
+            "difficulty": "advanced",
+            "xp": 100,
+            "skills": [
+              "greedy",
+              "greedy choice property",
+              "activity selection"
+            ]
+          },
+          {
+            "id": "ps-10",
+            "title": "Dynamic Programming",
+            "description": "Solve problems with overlapping subproblems by caching and reusing results",
+            "difficulty": "advanced",
+            "xp": 110,
+            "skills": [
+              "dynamic programming",
+              "memoization",
+              "tabulation"
+            ]
+          },
+          {
+            "id": "ps-11",
+            "title": "Trees & Graphs",
+            "description": "Model hierarchical and networked data, and traverse it systematically",
+            "difficulty": "advanced",
+            "xp": 110,
+            "skills": [
+              "trees",
+              "graphs",
+              "tree traversal"
+            ]
+          },
+          {
+            "id": "ps-12",
+            "title": "Backtracking",
+            "description": "Systematically search for valid solutions, abandoning paths as soon as they can't work",
+            "difficulty": "advanced",
+            "xp": 105,
+            "skills": [
+              "backtracking",
+              "constraint satisfaction",
+              "pruning"
+            ]
+          }
+        ]
+      },
+      {
+        "level": 4,
+        "name": "Expert",
+        "challenges": [
+          {
+            "id": "ps-13",
+            "title": "Graph Algorithms",
+            "description": "Find shortest paths and traversal orders across networked data",
+            "difficulty": "expert",
+            "xp": 140,
+            "skills": [
+              "breadth-first search",
+              "depth-first search",
+              "shortest path"
+            ]
+          },
+          {
+            "id": "ps-14",
+            "title": "Complex Systems",
+            "description": "Solve multi-component system design problems",
+            "difficulty": "expert",
+            "xp": 130,
+            "skills": [
+              "abstraction",
+              "interfaces",
+              "composition"
+            ]
+          },
+          {
+            "id": "ps-15",
+            "title": "Research Problems",
+            "description": "Tackle open-ended research-level problems",
+            "difficulty": "expert",
+            "xp": 150,
+            "skills": [
+              "research",
+              "analysis",
+              "innovation"
+            ]
+          },
+          {
+            "id": "ps-16",
+            "title": "Open-Ended Challenges",
+            "description": "Solve ambiguous problems with multiple valid solutions",
+            "difficulty": "expert",
+            "xp": 175,
+            "skills": [
+              "creativity",
+              "judgment",
+              "trade-offs"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "programming": {
+    "name": "Programming",
+    "icon": "\ud83d\udcbb",
+    "description": "Master the craft of writing clean, efficient, and maintainable code",
+    "color": "#3f37c9",
+    "levels": [
+      {
+        "level": 1,
+        "name": "Foundational",
+        "challenges": [
+          {
+            "id": "pr-01",
+            "title": "Hello World",
+            "description": "Write your first program with basic output",
+            "difficulty": "beginner",
+            "xp": 30,
+            "skills": [
+              "output",
+              "syntax",
+              "structure"
+            ]
+          },
+          {
+            "id": "pr-02",
+            "title": "Variables & Types",
+            "description": "Work with different data types and variables",
+            "difficulty": "beginner",
+            "xp": 40,
+            "skills": [
+              "variables",
+              "types",
+              "constants"
+            ]
+          },
+          {
+            "id": "pr-02b",
+            "title": "Operators & Expressions",
+            "description": "Combine values and variables into expressions using arithmetic, comparison, and logical operators",
+            "difficulty": "beginner",
+            "xp": 45,
+            "skills": [
+              "operators",
+              "expressions",
+              "operator precedence"
+            ]
+          },
+          {
+            "id": "pr-03",
+            "title": "Control Flow",
+            "description": "Use conditionals and loops to control program flow",
+            "difficulty": "beginner",
+            "xp": 50,
+            "skills": [
+              "if/else",
+              "loops",
+              "switch"
+            ]
+          }
+        ]
+      },
+      {
+        "level": 2,
+        "name": "Intermediate",
+        "challenges": [
+          {
+            "id": "pr-04",
+            "title": "Functions",
+            "description": "Create reusable code with functions",
+            "difficulty": "intermediate",
+            "xp": 65,
+            "skills": [
+              "functions",
+              "parameters",
+              "return values"
+            ]
+          },
+          {
+            "id": "pr-05",
+            "title": "Arrays & Collections",
+            "description": "Store and manipulate ordered and keyed collections of data",
+            "difficulty": "intermediate",
+            "xp": 70,
+            "skills": [
+              "arrays",
+              "objects",
+              "destructuring"
+            ]
+          },
+          {
+            "id": "pr-06",
+            "title": "Classes & Objects",
+            "description": "Model real-world things as classes with their own state and behaviour",
+            "difficulty": "intermediate",
+            "xp": 75,
+            "skills": [
+              "classes",
+              "constructors",
+              "instances"
+            ]
+          },
+          {
+            "id": "pr-06b",
+            "title": "Strings & Text Processing",
+            "description": "Manipulate and validate text: the most common data type in real applications",
+            "difficulty": "intermediate",
+            "xp": 70,
+            "skills": [
+              "strings",
+              "string methods",
+              "string formatting"
+            ]
+          }
+        ]
+      },
+      {
+        "level": 3,
+        "name": "Advanced",
+        "challenges": [
+          {
+            "id": "pr-07a",
+            "title": "Encapsulation & Abstraction",
+            "description": "Protect an object's internal state and expose only what callers need",
+            "difficulty": "advanced",
+            "xp": 90,
+            "skills": [
+              "encapsulation",
+              "access modifiers",
+              "abstraction"
+            ]
+          },
+          {
+            "id": "pr-07b",
+            "title": "Inheritance & Polymorphism",
+            "description": "Share behaviour between related classes and let each specialize it",
+            "difficulty": "advanced",
+            "xp": 95,
+            "skills": [
+              "inheritance",
+              "polymorphism",
+              "method overriding"
+            ]
+          },
+          {
+            "id": "pr-07c",
+            "title": "Interfaces & Composition",
+            "description": "Define contracts between components and prefer composing behaviour over deep inheritance",
+            "difficulty": "advanced",
+            "xp": 95,
+            "skills": [
+              "interfaces",
+              "composition"
+            ]
+          },
+          {
+            "id": "pr-07",
+            "title": "Async Programming",
+            "description": "Handle asynchronous operations effectively",
+            "difficulty": "advanced",
+            "xp": 90,
+            "skills": [
+              "callbacks",
+              "promises",
+              "async/await"
+            ]
+          },
+          {
+            "id": "pr-08",
+            "title": "Working with APIs",
+            "description": "Integrate external APIs into applications",
+            "difficulty": "advanced",
+            "xp": 100,
+            "skills": [
+              "fetch",
+              "REST",
+              "error handling"
+            ]
+          },
+          {
+            "id": "pr-09",
+            "title": "Testing",
+            "description": "Write automated tests for your code",
+            "difficulty": "advanced",
+            "xp": 95,
+            "skills": [
+              "unit tests",
+              "integration tests",
+              "TDD"
+            ]
+          },
+          {
+            "id": "pr-09b",
+            "title": "Closures & Higher-Order Functions",
+            "description": "Write functions that take or return other functions, and understand what a closure actually captures",
+            "difficulty": "advanced",
+            "xp": 95,
+            "skills": [
+              "closures",
+              "higher-order functions",
+              "callbacks"
+            ]
+          },
+          {
+            "id": "pr-09c",
+            "title": "Modules & Code Organization",
+            "description": "Split a codebase into well-bounded files and modules instead of one large script",
+            "difficulty": "advanced",
+            "xp": 90,
+            "skills": [
+              "modules",
+              "code organization",
+              "separation of concerns"
+            ]
+          }
+        ]
+      },
+      {
+        "level": 4,
+        "name": "Expert",
+        "challenges": [
+          {
+            "id": "pr-10",
+            "title": "System Design",
+            "description": "Design complete software systems",
+            "difficulty": "expert",
+            "xp": 130,
+            "skills": [
+              "architecture",
+              "patterns",
+              "scalability"
+            ]
+          },
+          {
+            "id": "pr-11",
+            "title": "Performance",
+            "description": "Optimize code for maximum performance",
+            "difficulty": "expert",
+            "xp": 140,
+            "skills": [
+              "profiling",
+              "optimization",
+              "benchmarking"
+            ]
+          },
+          {
+            "id": "pr-12",
+            "title": "Architecture Patterns",
+            "description": "Apply advanced architectural patterns",
+            "difficulty": "expert",
+            "xp": 150,
+            "skills": [
+              "MVC",
+              "Microservices",
+              "Event-driven"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "debugging": {
+    "name": "Debugging",
+    "icon": "\ud83d\udc1b",
+    "description": "Learn to identify, isolate, and fix errors in code systematically",
+    "color": "#4cc9f0",
+    "levels": [
+      {
+        "level": 1,
+        "name": "Foundational",
+        "challenges": [
+          {
+            "id": "db-01",
+            "title": "Syntax Errors",
+            "description": "Identify and fix common syntax errors",
+            "difficulty": "beginner",
+            "xp": 40,
+            "skills": [
+              "error messages",
+              "common mistakes",
+              "typos"
+            ]
+          },
+          {
+            "id": "db-02",
+            "title": "Console Logs",
+            "description": "Use console.log for debugging",
+            "difficulty": "beginner",
+            "xp": 45,
+            "skills": [
+              "console",
+              "output",
+              "tracking"
+            ]
+          },
+          {
+            "id": "db-03",
+            "title": "Basic Tracing",
+            "description": "Trace program execution step by step",
+            "difficulty": "beginner",
+            "xp": 50,
+            "skills": [
+              "flow",
+              "variables",
+              "state"
+            ]
+          }
+        ]
+      },
+      {
+        "level": 2,
+        "name": "Intermediate",
+        "challenges": [
+          {
+            "id": "db-04",
+            "title": "Logic Errors",
+            "description": "Find and fix logical mistakes in code",
+            "difficulty": "intermediate",
+            "xp": 70,
+            "skills": [
+              "boolean logic",
+              "off-by-one",
+              "conditions"
+            ]
+          },
+          {
+            "id": "db-05",
+            "title": "Stack Traces",
+            "description": "Read and understand error stack traces",
+            "difficulty": "intermediate",
+            "xp": 65,
+            "skills": [
+              "call stack",
+              "error propagation",
+              "source maps"
+            ]
+          },
+          {
+            "id": "db-06",
+            "title": "Using Breakpoints",
+            "description": "Debug with browser developer tools",
+            "difficulty": "intermediate",
+            "xp": 75,
+            "skills": [
+              "breakpoints",
+              "watch",
+              "stepping"
+            ]
+          }
+        ]
+      },
+      {
+        "level": 3,
+        "name": "Advanced",
+        "challenges": [
+          {
+            "id": "db-07",
+            "title": "Race Conditions",
+            "description": "Identify and fix concurrency issues",
+            "difficulty": "advanced",
+            "xp": 100,
+            "skills": [
+              "timing",
+              "synchronization",
+              "threads"
+            ]
+          },
+          {
+            "id": "db-08",
+            "title": "Memory Leaks",
+            "description": "Detect and resolve memory leaks",
+            "difficulty": "advanced",
+            "xp": 105,
+            "skills": [
+              "heap",
+              "garbage collection",
+              "profiling"
+            ]
+          },
+          {
+            "id": "db-09",
+            "title": "Integration Bugs",
+            "description": "Debug multi-component integrations",
+            "difficulty": "advanced",
+            "xp": 110,
+            "skills": [
+              "integration",
+              "API contracts",
+              "mocks"
+            ]
+          }
+        ]
+      },
+      {
+        "level": 4,
+        "name": "Expert",
+        "challenges": [
+          {
+            "id": "db-10",
+            "title": "Production Debugging",
+            "description": "Debug issues in live production systems",
+            "difficulty": "expert",
+            "xp": 140,
+            "skills": [
+              "logging",
+              "monitoring",
+              "crash reports"
+            ]
+          },
+          {
+            "id": "db-11",
+            "title": "Heisenbugs",
+            "description": "Tackle non-deterministic bugs",
+            "difficulty": "expert",
+            "xp": 150,
+            "skills": [
+              "non-determinism",
+              "timing",
+              "isolation"
+            ]
+          },
+          {
+            "id": "db-12",
+            "title": "Distributed Systems",
+            "description": "Debug distributed and microservices",
+            "difficulty": "expert",
+            "xp": 160,
+            "skills": [
+              "tracing",
+              "correlation IDs",
+              "consistency"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "architecture": {
+    "name": "Architecture",
+    "icon": "\ud83c\udfd7\ufe0f",
+    "description": "Design scalable, maintainable, and robust software systems",
+    "color": "#3a86ff",
+    "levels": [
+      {
+        "level": 1,
+        "name": "Foundational",
+        "challenges": [
+          {
+            "id": "arch-01",
+            "title": "Component Design",
+            "description": "Design modular, reusable components",
+            "difficulty": "beginner",
+            "xp": 50,
+            "skills": [
+              "modularity",
+              "reusability",
+              "encapsulation"
+            ]
+          },
+          {
+            "id": "arch-02",
+            "title": "Modular Code",
+            "description": "Organize code into logical modules",
+            "difficulty": "beginner",
+            "xp": 55,
+            "skills": [
+              "organization",
+              "imports/exports",
+              "namespacing"
+            ]
+          }
+        ]
+      },
+      {
+        "level": 2,
+        "name": "Intermediate",
+        "challenges": [
+          {
+            "id": "arch-03",
+            "title": "Design Patterns",
+            "description": "Apply common design patterns",
+            "difficulty": "intermediate",
+            "xp": 80,
+            "skills": [
+              "singleton",
+              "factory",
+              "observer",
+              "strategy"
+            ]
+          },
+          {
+            "id": "arch-04",
+            "title": "State Management",
+            "description": "Design effective state management solutions",
+            "difficulty": "intermediate",
+            "xp": 85,
+            "skills": [
+              "state",
+              "immutability",
+              "flux",
+              "redux"
+            ]
+          }
+        ]
+      },
+      {
+        "level": 3,
+        "name": "Advanced",
+        "challenges": [
+          {
+            "id": "arch-05",
+            "title": "Microservices",
+            "description": "Design microservices architectures",
+            "difficulty": "advanced",
+            "xp": 110,
+            "skills": [
+              "services",
+              "API gateway",
+              "service mesh"
+            ]
+          },
+          {
+            "id": "arch-06",
+            "title": "Event-Driven",
+            "description": "Build event-driven systems",
+            "difficulty": "advanced",
+            "xp": 115,
+            "skills": [
+              "events",
+              "pub/sub",
+              "message queues"
+            ]
+          },
+          {
+            "id": "arch-07",
+            "title": "Scalability",
+            "description": "Design for horizontal scalability",
+            "difficulty": "advanced",
+            "xp": 120,
+            "skills": [
+              "load balancing",
+              "caching",
+              "sharding"
+            ]
+          }
+        ]
+      },
+      {
+        "level": 4,
+        "name": "Expert",
+        "challenges": [
+          {
+            "id": "arch-08",
+            "title": "Distributed Architecture",
+            "description": "Design globally distributed systems",
+            "difficulty": "expert",
+            "xp": 160,
+            "skills": [
+              "CDN",
+              "geo-replication",
+              "consistency"
+            ]
+          },
+          {
+            "id": "arch-09",
+            "title": "Enterprise Systems",
+            "description": "Architect large-scale enterprise applications",
+            "difficulty": "expert",
+            "xp": 170,
+            "skills": [
+              "SOA",
+              "integration",
+              "governance"
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

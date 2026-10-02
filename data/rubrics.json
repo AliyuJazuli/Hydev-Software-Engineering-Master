@@ -1,0 +1,66 @@
+{
+  "problemSolving": {
+    "criteria": [
+      { "name": "Problem Understanding", "weight": 0.25, "description": "Ability to correctly understand and interpret the problem requirements" },
+      { "name": "Solution Design", "weight": 0.30, "description": "Quality of the approach to solving the problem" },
+      { "name": "Implementation", "weight": 0.20, "description": "Correctness and completeness of the code implementation" },
+      { "name": "Testing", "weight": 0.15, "description": "Adequacy of testing and validation of the solution" },
+      { "name": "Documentation", "weight": 0.10, "description": "Clarity of code documentation and comments" }
+    ],
+    "minPassingScore": 70,
+    "feedbackGuidelines": {
+      "excellent": "Exceptional problem-solving approach demonstrating deep understanding",
+      "good": "Solid solution with clear thinking and good implementation",
+      "adequate": "Basic solution meeting requirements but could be improved",
+      "needsWork": "Solution shows gaps in understanding or approach"
+    }
+  },
+  "programming": {
+    "criteria": [
+      { "name": "Code Quality", "weight": 0.30, "description": "Readability, maintainability, and adherence to style guidelines" },
+      { "name": "Functionality", "weight": 0.25, "description": "Correctness of the code's behavior and output" },
+      { "name": "Efficiency", "weight": 0.20, "description": "Performance and optimal use of resources" },
+      { "name": "Error Handling", "weight": 0.15, "description": "Handling of edge cases, exceptions, and invalid inputs" },
+      { "name": "Testing", "weight": 0.10, "description": "Adequacy and quality of test coverage" }
+    ],
+    "minPassingScore": 70,
+    "feedbackGuidelines": {
+      "excellent": "Production-quality code with excellent structure and best practices",
+      "good": "Well-written code with minor opportunities for improvement",
+      "adequate": "Functional code but lacking in polish or best practices",
+      "needsWork": "Code has significant issues affecting quality or correctness"
+    }
+  },
+  "debugging": {
+    "criteria": [
+      { "name": "Error Identification", "weight": 0.30, "description": "Ability to correctly identify the root cause of the bug" },
+      { "name": "Analysis", "weight": 0.25, "description": "Quality of the systematic analysis process" },
+      { "name": "Fix Implementation", "weight": 0.20, "description": "Correctness and completeness of the fix applied" },
+      { "name": "Verification", "weight": 0.15, "description": "Confirmation that the fix resolves the issue without introducing new bugs" },
+      { "name": "Documentation", "weight": 0.10, "description": "Documentation of the bug and fix process" }
+    ],
+    "minPassingScore": 70,
+    "feedbackGuidelines": {
+      "excellent": "Masterful debugging with thorough analysis and verification",
+      "good": "Effective debugging with clear reasoning and correct fix",
+      "adequate": "Basic debugging skills with correct but potentially incomplete fix",
+      "needsWork": "Debugging approach needs improvement or fix is incomplete"
+    }
+  },
+  "architecture": {
+    "criteria": [
+      { "name": "Scalability", "weight": 0.25, "description": "Ability of the design to handle growth and increased load" },
+      { "name": "Maintainability", "weight": 0.25, "description": "Ease of future modifications and extensions" },
+      { "name": "Robustness", "weight": 0.20, "description": "Reliability and stability under various conditions" },
+      { "name": "Efficiency", "weight": 0.15, "description": "Optimal use of computational and human resources" },
+      { "name": "Documentation", "weight": 0.15, "description": "Clarity of architectural documentation and diagrams" }
+    ],
+    "minPassingScore": 70,
+    "feedbackGuidelines": {
+      "excellent": "Professional-grade architecture demonstrating expert-level design",
+      "good": "Solid architecture with good trade-offs and clear rationale",
+      "adequate": "Basic architecture meeting requirements but with room for improvement",
+      "needsWork": "Architecture has significant design flaws or missing considerations"
+    }
+  }
+}

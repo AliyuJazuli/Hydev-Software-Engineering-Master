@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HYDEV SE — Software Engineering Mastery</title>
+    <meta name="theme-color" content="#101820">
+    <meta name="description" content="HYDEV Software Engineering Mastery Platform">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="hydev-logo.png" type="image/png">
+    <link rel="icon" href="assets/hydev-icon-256.png" type="image/png" sizes="256x256">
+    <link rel="stylesheet" href="css/styles.css?v=2026090701">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Boot Screen - ID matches app.js -->
+    <div id="bootScreen" class="boot-screen">
+        <div class="boot-content">
+            <div class="boot-logo">
+                <img src="hydev-logo.png" alt="HYDEV" class="boot-wordmark">
+            </div>
+            <div class="boot-spinner"></div>
+            <p class="boot-text">Initializing engineering environment</p>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <div id="app" class="app" hidden>
+        <!-- Header -->
+        <header class="header">
+            <div class="header-left">
+                <div class="brand">
+                    <img src="hydev-logo.png" alt="HYDEV" class="brand-mark">
+                    <span class="brand-text">HYDEV</span>
+                    <span class="brand-badge">SE</span>
+                </div>
+            </div>
+
+            <nav class="nav">
+                <a href="#" class="nav-item active" data-page="dashboard">
+                    <span class="nav-icon" aria-hidden="true"></span>
+                    <span class="nav-label">Dashboard</span>
+                </a>
+                <a href="#" class="nav-item" data-page="curriculum">
+                    <span class="nav-icon" aria-hidden="true"></span>
+                    <span class="nav-label">Curriculum</span>
+                </a>
+                <a href="#" class="nav-item" data-page="labs">
+                    <span class="nav-icon" aria-hidden="true"></span>
+                    <span class="nav-label">Labs</span>
+                </a>
+                <a href="#" class="nav-item" data-page="evidence">
+                    <span class="nav-icon" aria-hidden="true"></span>
+                    <span class="nav-label">Evidence</span>
+                </a>
+                <a href="#" class="nav-item" data-page="progress">
+                    <span class="nav-icon" aria-hidden="true"></span>
+                    <span class="nav-label">Progress</span>
+                </a>
+            </nav>
+
+            <div class="header-right">
+                <div class="user-info">
+                    <div class="user-avatar" id="learnerAvatar">H</div>
+                    <div class="user-details">
+                        <span class="user-name" id="learnerName">Hydr</span>
+                        <span class="user-level">Stage <span id="learnerLevel">1</span></span>
+                    </div>
+                    <button class="edit-name-btn" id="editNameBtn" type="button">Edit name</button>
+                </div>
+                <button class="btn-icon" id="settingsBtn" aria-label="Settings" title="Settings">⚙</button>
+                <button class="btn-icon theme-control" id="themeToggle" aria-label="Toggle theme">Theme</button>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main">
+            <!-- Dashboard Page -->
+            <section class="page active" data-page="dashboard">
+                <div class="page-header">
+                    <div class="page-eyebrow">Overview</div>
+                    <h1 class="page-title">Dashboard</h1>
+                </div>
+
+                <div class="dashboard-hero">
+                    <div class="dashboard-hero-copy">
+                        <span class="card-badge">Next action</span>
+                        <h2 class="challenge-title" id="currentChallengeTitle">Loading...</h2>
+                        <p class="challenge-desc" id="currentChallengeDesc">Preparing your journey...</p>
+                        <div class="challenge-tags">
+                            <span class="tag" id="currentPillarChip">Programming</span>
+                            <span class="tag" id="currentLevelChip">Level 1</span>
+                            <span class="tag tag-xp" id="currentXPChip">Practical task</span>
+                        </div>
+                        <div class="focus-summary" id="currentFocusSummary">Focus: building fundamental evidence through the next challenge.</div>
+                    </div>
+                    <div class="dashboard-hero-action">
+                        <button class="btn btn-primary" id="startChallengeBtn">
+                            Study Lesson
+                            <span class="btn-arrow">→</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="dashboard-secondary-row">
+                    <div class="dashboard-profile-strip">
+                        <div class="profile-avatar-large" id="dashboardProfileAvatar">H</div>
+                        <div class="profile-copy">
+                            <span class="section-kicker">Your profile</span>
+                            <h2 id="dashboardProfileName">Hydr</h2>
+                        </div>
+                        <button class="btn btn-ghost btn-sm" id="editProfileBtn">Edit profile</button>
+                    </div>
+
+                    <div class="dashboard-mastery-strip">
+                        <div class="mastery-overview-panel" aria-label="Overall mastery">
+                            <div class="mastery-overview-top">
+                                <div>
+                                    <span class="section-kicker">Overall mastery</span>
+                                    <h3 id="overallMasteryLabel">Building foundations</h3>
+                                </div>
+                                <strong class="mastery-value" id="overallMasteryValue">0%</strong>
+                            </div>
+                            <div class="mastery-track" aria-hidden="true">
+                                <div class="mastery-track-fill" id="overallMasteryBar"></div>
+                            </div>
+                            <div class="mastery-details">
+                                <div class="mastery-stat">
+                                    <span class="stat-label">Current stage</span>
+                                    <span class="stat-value" id="overallMasteryLevel">1</span>
+                                </div>
+                                <div class="mastery-stat">
+                                    <span class="stat-label">Challenges completed</span>
+                                    <span class="stat-value" id="learnerXP">0</span>
+                                </div>
+                                <div class="mastery-stat">
+                                    <span class="stat-label">Lesson time</span>
+                                    <span class="stat-value" id="timeSpent">0m</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="dashboard-section">
+                    <div class="dashboard-section-header">
+                        <h3>Four Pillars</h3>
+                    </div>
+                    <div class="pillars-grid" id="pillarsGrid">
+                        <!-- Loaded by JS -->
+                    </div>
+                </div>
+
+                <div class="dashboard-section">
+                    <div class="dashboard-section-header">
+                        <h3>Recent Activity</h3>
+                        <span class="card-caption">Your latest learning record</span>
+                    </div>
+                    <div class="activity-list" id="activityList">
+                        <!-- Loaded by JS -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Curriculum Page -->
+            <section class="page" data-page="curriculum">
+                <div class="page-header">
+                    <div class="page-eyebrow">Learning Path</div>
+                    <h1 class="page-title">Curriculum</h1>
+                </div>
+
+                <div class="filter-bar">
+                    <button class="filter-chip active" data-filter="all">All</button>
+                    <button class="filter-chip" data-filter="problemSolving">Problem Solving</button>
+                    <button class="filter-chip" data-filter="programming">Programming</button>
+                    <button class="filter-chip" data-filter="debugging">Debugging</button>
+                    <button class="filter-chip" data-filter="architecture">Architecture</button>
+                    <label class="curriculum-sort">
+                        <span>Sort</span>
+                        <select class="select" id="curriculumSort">
+                            <option value="level">Level</option>
+                            <option value="title">Title</option>
+                            <option value="progress">Progress</option>
+                        </select>
+                    </label>
+                </div>
+
+                <div class="curriculum-container" id="curriculumLevels">
+                    <!-- Loaded by JS -->
+                </div>
+            </section>
+
+            <!-- Dedicated Lesson Page -->
+            <section class="page" data-page="lesson">
+                <div class="page-header lesson-page-header">
+                    <button class="btn btn-ghost" id="backToCurriculumBtn">← Back to Curriculum</button>
+                    <div class="page-eyebrow">Independent Lesson</div>
+                    <h1 class="page-title" id="lessonPageTitle">Lesson</h1>
+                    <p class="page-lede" id="lessonPageSubtitle"></p>
+                </div>
+                <div class="lesson-layout">
+                    <article class="lesson-content" id="lessonContent"></article>
+                    <aside class="lesson-sidebar">
+                        <div class="lesson-progress-card">
+                            <span class="section-kicker">Final assessment</span>
+                            <h3>Submit your readiness check</h3>
+                            <p id="lessonSidebarDescription">Read each section, do the guided and independent practice, write your reflection, then answer all questions. Submitting scores your answers as real evidence.</p>
+                            <label class="lesson-complete-label">
+                                <input type="checkbox" id="lessonReadConfirm">
+                                I read this lesson and attempted both practice sections.
+                            </label>
+                            <label class="readiness-field" for="lessonReadiness">
+                                <span>Readiness check</span>
+                                <select class="select" id="lessonReadiness">
+                                    <option value="">Choose a skill taught in this lesson</option>
+                                </select>
+                            </label>
+                            <button class="btn btn-primary" id="completeLessonBtn">Submit final assessment</button>
+                            <button class="btn btn-secondary" id="openLessonAssessmentBtn" disabled>Open practical assessment</button>
+                            <p class="ai-sidebar-hint">Stuck on this lesson? Open <strong>HYDEV AI</strong> (bottom right) — it can see this lesson and give a hint without giving away the answer.</p>
+                        </div>
+                    </aside>
+                </div>
+            </section>
+
+            <!-- Labs Page -->
+            <section class="page" data-page="labs">
+                <div class="page-header">
+                    <div class="page-eyebrow">Workspace</div>
+                    <h1 class="page-title">Labs</h1>
+                </div>
+
+                <div class="labs-layout">
+                    <aside class="labs-sidebar">
+                        <div class="sidebar-header">
+                            <h3>Assessments</h3>
+                            <span class="challenge-count"><span id="challengeCount">47</span> total</span>
+                        </div>
+                        <div class="challenge-list" id="challengeList">
+                            <!-- Loaded by JS -->
+                        </div>
+                    </aside>
+
+                    <div class="labs-main">
+                        <div class="editor-header">
+                            <div class="editor-info">
+                                <h3 class="lab-title" id="labChallengeTitle">Select a Challenge</h3>
+                                <span class="lab-pillar" id="labPillarLabel">—</span>
+                            </div>
+                            <div class="editor-actions">
+                                <select class="select" id="languageSelect">
+                                    <option value="javascript">JavaScript</option>
+                                    <option value="python">Python</option>
+                                    <option value="kotlin">Kotlin</option>
+                                </select>
+                                <button class="btn btn-ghost" id="resetCodeBtn">Reset</button>
+                            </div>
+                        </div>
+
+                        <div class="editor-split">
+                            <div class="editor-pane">
+                                <div class="pane-header">
+                                    <span class="pane-title" id="editorLang">JavaScript</span>
+                                </div>
+                                <div class="pane-body">
+                                    <textarea class="code-editor" id="codeEditor" spellcheck="false" placeholder="// Loading..."></textarea>
+                                </div>
+                            </div>
+                            <div class="output-pane">
+                                <div class="pane-header">
+                                    <span class="pane-title">Lesson and requirements</span>
+                                </div>
+                                <div class="pane-body" id="challengeBrief">
+                                    <!-- Loaded by JS -->
+                                </div>
+                                <div class="language-guide" id="languageGuide" hidden></div>
+                            </div>
+                        </div>
+
+                        <div class="editor-footer">
+                            <div class="output-status">
+                                <span class="status-indicator"></span>
+                                <span class="status-text" id="outputStatus">Ready</span>
+                            </div>
+                            <div class="editor-buttons">
+                                <button class="btn btn-secondary" id="runCodeBtn">
+                                    <span class="btn-icon">▶</span>
+                                    Run
+                                </button>
+                                <button class="btn btn-primary" id="submitCodeBtn">
+                                    <span class="btn-icon">✓</span>
+                                    Submit
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="output-container">
+                            <div class="output-header">
+                                <span class="output-title">Output</span>
+                            </div>
+                            <pre class="output-content" id="codeOutput">Run your code to see output here</pre>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Evidence Page -->
+            <section class="page" data-page="evidence">
+                <div class="page-header">
+                    <div class="page-eyebrow">Evidence</div>
+                    <h1 class="page-title">Evidence Trail</h1>
+                </div>
+
+                <div class="evidence-stats">
+                    <div class="stat-card">
+                        <span class="stat-value" id="evidenceTotal">0</span>
+                        <span class="stat-label">Submissions</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-value" id="evidencePassed">0</span>
+                        <span class="stat-label">Passed</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-value" id="evidenceAvg">0</span>
+                        <span class="stat-label">Avg Score</span>
+                    </div>
+                </div>
+
+                <div class="evidence-list" id="evidenceList">
+                    <!-- Loaded by JS -->
+                </div>
+            </section>
+
+            <!-- Progress Page -->
+            <section class="page" data-page="progress">
+                <div class="page-header">
+                    <div class="page-eyebrow">Statistics</div>
+                    <h1 class="page-title">Progress</h1>
+                </div>
+
+                <div class="progress-grid">
+                    <div class="card progress-summary-card">
+                        <div class="card-header">
+                            <div>
+                                <span class="section-kicker">Your learning signal</span>
+                                <h3 class="card-title">Progress at a glance</h3>
+                            </div>
+                            <span class="progress-summary-mark">HY</span>
+                        </div>
+                        <div class="card-body progress-summary-body">
+                            <div class="progress-summary-main">
+                                <strong id="progressOverallValue">0%</strong>
+                                <span>overall mastery</span>
+                                <div class="progress-summary-track"><div class="progress-summary-fill" id="progressOverallBar"></div></div>
+                            </div>
+                            <div class="progress-summary-stats">
+                                <div><strong id="progressCompleted">0</strong><span>completed</span></div>
+                                <div><strong id="progressTimeSpent">0m</strong><span>lesson time</span></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Pillar mastery</h3>
+                        </div>
+                        <div class="card-body" id="masteryBars"></div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Challenge coverage</h3>
+                        </div>
+                        <div class="card-body" id="levelDistribution">
+                            <div class="coverage-list">
+                                <div class="level-item"><span>Foundational</span><strong class="level-count">0</strong><div class="level-bar"><div class="level-fill" style="width: 0%"></div></div></div>
+                                <div class="level-item"><span>Intermediate</span><strong class="level-count">0</strong><div class="level-bar"><div class="level-fill" style="width: 0%"></div></div></div>
+                                <div class="level-item"><span>Advanced</span><strong class="level-count">0</strong><div class="level-bar"><div class="level-fill" style="width: 0%"></div></div></div>
+                                <div class="level-item"><span>Expert</span><strong class="level-count">0</strong><div class="level-bar"><div class="level-fill" style="width: 0%"></div></div></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card card-full">
+                        <div class="card-header">
+                            <h3 class="card-title">Learning record</h3>
+                        </div>
+                        <div class="card-body" id="learningRecordGrid">
+                            <!-- Loaded by JS -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="footer-left">
+                <span class="footer-brand">
+                    <img src="logo.png" alt="" class="footer-mark">
+                    <span>HYDEV SE</span>
+                </span>
+                <span class="footer-version">v1.1.0</span>
+            </div>
+            <div class="footer-right">
+                <span class="footer-status">Ready</span>
+            </div>
+        </footer>
+
+        <!-- HYDEV AI chat widget: a UI on top of the existing HYDEV.AI engine (js/ai-interface.js) -->
+        <button class="ai-chat-toggle" id="aiChatToggle" type="button" aria-label="Open HYDEV AI" title="HYDEV AI">
+            <span class="ai-chat-toggle-icon">AI</span>
+            <span class="ai-chat-toggle-label">HYDEV AI</span>
+        </button>
+
+        <div class="ai-chat-panel" id="aiChatPanel" hidden>
+            <div class="ai-chat-header">
+                <div>
+                    <strong>HYDEV AI</strong>
+                    <span class="ai-chat-subtitle">Tutor, not an answer key</span>
+                </div>
+                <button class="btn-icon" id="aiChatClose" aria-label="Close">✕</button>
+            </div>
+
+            <div class="ai-chat-status" id="aiChatStatus" hidden></div>
+
+            <div class="ai-chat-quick-actions">
+                <button class="ai-chat-chip" type="button" data-ai-action="hint">Hint</button>
+                <button class="ai-chat-chip" type="button" data-ai-action="explain">Explain</button>
+                <button class="ai-chat-chip" type="button" data-ai-action="review">Review my code</button>
+                <button class="ai-chat-chip ai-chat-chip-strong" type="button" data-ai-action="solution">Show solution</button>
+            </div>
+
+            <div class="ai-chat-messages" id="aiChatMessages"></div>
+            <div class="ai-chat-typing" id="aiChatTyping" hidden>HYDEV AI is thinking…</div>
+
+            <div class="ai-chat-footer">
+                <label class="ai-chat-level-field">
+                    <span>Assistance level</span>
+                    <select class="select" id="aiAssistanceLevel">
+                        <option value="A0">A0 — Independent</option>
+                        <option value="A1">A1 — Small hint</option>
+                        <option value="A2">A2 — Guided hint</option>
+                        <option value="A3">A3 — Substantial guidance</option>
+                        <option value="A4">A4 — Direct solution</option>
+                    </select>
+                </label>
+                <form class="ai-chat-form" id="aiChatForm">
+                    <input type="text" id="aiChatInput" class="input" placeholder="Ask HYDEV AI about this lesson or challenge…" autocomplete="off">
+                    <button class="btn btn-primary btn-sm" type="submit">Send</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container - ID matches app.js -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <!-- Modal -->
+    <div class="modal" id="modal" hidden>
+        <div class="modal-backdrop"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modalTitle">Settings</h2>
+                <button class="btn-icon" data-close>✕</button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <!-- Dynamic content -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts - Order matters! -->
+    <script src="js/utils.js?v=2026090701"></script>
+    <script src="js/learner-model.js?v=2026090701"></script>
+    <script src="js/curriculum.js?v=2026090701"></script>
+    <script src="js/mastery.js?v=2026090701"></script>
+    <script src="js/evidence.js?v=2026090701"></script>
+    <script src="js/adaptive-engine.js?v=2026090701"></script>
+    <script src="js/assessment.js?v=2026090701"></script>
+    <script src="js/ai-interface.js?v=2026090701"></script>
+    <script src="js/app.js?v=2026090701"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => navigator.serviceWorker.register('sw.js'));
+        }
+    </script>
+</body>
+</html>

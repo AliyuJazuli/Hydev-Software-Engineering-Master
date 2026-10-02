@@ -1,0 +1,10 @@
+{
+  "name": "hydev-se",
+  "version": "1.1.0",
+  "description": "HYDEV Software Engineering Mastery Platform",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js"
+  },
+  "license": "UNLICENSED"
+}

@@ -1,0 +1,4 @@
+{
+  "apiKey": "sk-or-v1-your-openrouter-key-here",
+  "model": "meta-llama/llama-3.1-8b-instruct:free"
+}
