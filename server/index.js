@@ -98,12 +98,20 @@ function executeKotlin(code, callback) {
 }
 
 function runProcess(command, args, language, callback) {
-  const child = spawn(command, args, {
+  const windowsBatchFile = process.platform === 'win32' && /\.(bat|cmd)$/i.test(command);
+  const options = {
     cwd: os.tmpdir(),
     env: { PATH: process.env.PATH || '', SystemRoot: process.env.SystemRoot || '' },
-    shell: false,
+    shell: windowsBatchFile,
     windowsHide: true
-  });
+  };
+  let child;
+  try {
+    child = spawn(command, args, options);
+  } catch (error) {
+    callback(null, { ok: false, error: `Runtime could not be started: ${error.message}` });
+    return;
+  }
   let output = '';
   let timedOut = false;
   let settled = false;

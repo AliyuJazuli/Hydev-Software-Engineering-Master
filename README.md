@@ -54,6 +54,26 @@ not just a per-challenge dropdown. Kotlin code execution in Labs requires
 the Kotlin compiler (`kotlinc`) installed and on PATH; JavaScript always
 works since it just uses Node.
 
+The Debugging practice queue includes eight additional runnable,
+output-checked labs across Foundational, Intermediate, Advanced, and Expert
+levels. Each new task includes JavaScript and Kotlin starter code with a
+deliberate bug; choose the language in the lab editor, trace the failure, and
+submit after the corrected output matches the expected result.
+
+## Independent lesson assessments
+
+Each independent lesson has a 10-question readiness check, with its pass
+threshold configured by `mastery.minPassingScore` in `data/config.json`
+(70% by default). Answers and optional reflection are saved locally while
+the learner works. After submission, the lesson records the attempt as
+evidence and shows the correct answers with explanations; learners can retry
+without losing their attempt history. Passing a Programming or Debugging
+lesson also unlocks its practical coding assessment. For other pillars,
+passing records lesson evidence and the learner continues along the curriculum.
+Only lesson checks and code submissions graded against an exact expected
+output count as verified evidence. Open-ended code still runs in the lab,
+but is not scored or counted until a reliable rubric grader is available.
+
 ## Running it
 
 You need [Node.js](https://nodejs.org) installed. Then, from this folder:

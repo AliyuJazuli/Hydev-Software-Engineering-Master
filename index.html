@@ -9,7 +9,7 @@
     <link rel="manifest" href="manifest.json">
     <link rel="icon" href="hydev-logo.png" type="image/png">
     <link rel="icon" href="assets/hydev-icon-256.png" type="image/png" sizes="256x256">
-    <link rel="stylesheet" href="css/styles.css?v=2026090701">
+    <link rel="stylesheet" href="css/styles.css?v=2026100506">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -204,22 +204,21 @@
                     <article class="lesson-content" id="lessonContent"></article>
                     <aside class="lesson-sidebar">
                         <div class="lesson-progress-card">
-                            <span class="section-kicker">Final assessment</span>
-                            <h3>Submit your readiness check</h3>
-                            <p id="lessonSidebarDescription">Read each section, do the guided and independent practice, write your reflection, then answer all questions. Submitting scores your answers as real evidence.</p>
-                            <label class="lesson-complete-label">
-                                <input type="checkbox" id="lessonReadConfirm">
-                                I read this lesson and attempted both practice sections.
-                            </label>
-                            <label class="readiness-field" for="lessonReadiness">
-                                <span>Readiness check</span>
-                                <select class="select" id="lessonReadiness">
-                                    <option value="">Choose a skill taught in this lesson</option>
-                                </select>
-                            </label>
-                            <button class="btn btn-primary" id="completeLessonBtn">Submit final assessment</button>
+                            <div class="lesson-assessment-heading">
+                                <div>
+                                    <span class="section-kicker">Final assessment</span>
+                                    <h3>Check what you learned</h3>
+                                </div>
+                                <span class="lesson-assessment-count"><span id="lessonQuestionCount">10</span> questions</span>
+                            </div>
+                            <p id="lessonSidebarDescription">Answer all questions. Score 70% or higher to record lesson evidence and continue along your learning path.</p>
+                            <div class="lesson-assessment-rule"><span class="lesson-pass-dot"></span>Pass mark <strong>70%</strong></div>
+                            <button class="btn btn-primary" id="completeLessonBtn" type="button">Start readiness check</button>
                             <button class="btn btn-secondary" id="openLessonAssessmentBtn" disabled>Open practical assessment</button>
-                            <p class="ai-sidebar-hint">Stuck on this lesson? Open <strong>HYDEV AI</strong> (bottom right) — it can see this lesson and give a hint without giving away the answer.</p>
+                            <details class="ai-sidebar-help">
+                                <summary>Need a hint?</summary>
+                                <p>Open <strong>HYDEV AI</strong> from the bottom-right button. It can see this lesson and give you a hint without giving away the answer.</p>
+                            </details>
                         </div>
                     </aside>
                 </div>
@@ -227,82 +226,105 @@
 
             <!-- Labs Page -->
             <section class="page" data-page="labs">
-                <div class="page-header">
+                <div class="page-header labs-page-header">
                     <div class="page-eyebrow">Workspace</div>
-                    <h1 class="page-title">Labs</h1>
+                    <h1 class="page-title">Build, run, understand.</h1>
+                    <p class="page-lede">Focused programming and debugging practice. Read the task, write your own solution, then run it to see what happens.</p>
                 </div>
 
-                <div class="labs-layout">
-                    <aside class="labs-sidebar">
+                <div class="labs-workspace">
+                    <aside class="lab-explorer" aria-label="Find a coding lab">
                         <div class="sidebar-header">
-                            <h3>Assessments</h3>
-                            <span class="challenge-count"><span id="challengeCount">47</span> total</span>
+                            <div class="sidebar-header-copy">
+                                <span class="section-kicker">Your practice queue</span>
+                                <h3>Choose a lab</h3>
+                            </div>
+                            <span class="challenge-count" id="challengeCount" aria-live="polite">0 labs</span>
+                        </div>
+                        <label class="lab-search-wrap" for="labSearch">
+                            <span class="sr-only">Search labs</span>
+                            <input class="input lab-search" id="labSearch" type="search" placeholder="Search labs..." autocomplete="off">
+                        </label>
+                        <div class="lab-filter-bar" role="group" aria-label="Filter labs">
+                            <button class="lab-filter active" type="button" data-lab-filter="all" aria-pressed="true">All</button>
+                            <button class="lab-filter" type="button" data-lab-filter="programming" aria-pressed="false">Programming</button>
+                            <button class="lab-filter" type="button" data-lab-filter="debugging" aria-pressed="false">Debugging</button>
                         </div>
                         <div class="challenge-list" id="challengeList">
                             <!-- Loaded by JS -->
                         </div>
                     </aside>
 
-                    <div class="labs-main">
-                        <div class="editor-header">
+                    <section class="lab-brief-panel" aria-label="Lab instructions">
+                        <div class="lab-panel-heading">
+                            <span class="section-kicker">Before you code</span>
+                            <span class="lab-step-marker">01 / 03</span>
+                        </div>
+                        <div class="lab-brief-content" id="challengeBrief">
+                            <div class="lab-empty-state">
+                                <span class="lab-empty-icon" aria-hidden="true">↖</span>
+                                <h2>Start with a task</h2>
+                                <p>Choose a programming or debugging lab to see what you’ll build, which lesson it practices, and how your work will be checked.</p>
+                            </div>
+                        </div>
+                        <div class="language-guide" id="languageGuide" hidden></div>
+                    </section>
+
+                    <section class="lab-workbench" aria-label="Code editor and output">
+                        <header class="editor-header">
                             <div class="editor-info">
-                                <h3 class="lab-title" id="labChallengeTitle">Select a Challenge</h3>
-                                <span class="lab-pillar" id="labPillarLabel">—</span>
+                                <span class="section-kicker">Your workspace</span>
+                                <h2 class="lab-title" id="labChallengeTitle">Select a lab to begin</h2>
+                                <div class="lab-badges">
+                                    <span class="lab-badge" id="labPillarLabel">—</span>
+                                    <span class="lab-badge lab-badge-muted" id="labDifficultyMeta">—</span>
+                                </div>
                             </div>
                             <div class="editor-actions">
+                                <label class="language-select-label" for="languageSelect">Language</label>
                                 <select class="select" id="languageSelect">
                                     <option value="javascript">JavaScript</option>
-                                    <option value="python">Python</option>
                                     <option value="kotlin">Kotlin</option>
                                 </select>
-                                <button class="btn btn-ghost" id="resetCodeBtn">Reset</button>
+                                <button class="btn btn-ghost" id="resetCodeBtn" type="button">Reset</button>
+                            </div>
+                        </header>
+
+                        <div class="editor-pane">
+                            <div class="pane-header">
+                                <span class="pane-title" id="editorLang">JavaScript</span>
+                                <span class="editor-unsaved-note">Write your solution here</span>
+                            </div>
+                            <div class="pane-body">
+                                <textarea class="code-editor" id="codeEditor" spellcheck="false" placeholder="// Start by writing your solution..." aria-label="Code editor"></textarea>
                             </div>
                         </div>
 
-                        <div class="editor-split">
-                            <div class="editor-pane">
-                                <div class="pane-header">
-                                    <span class="pane-title" id="editorLang">JavaScript</span>
-                                </div>
-                                <div class="pane-body">
-                                    <textarea class="code-editor" id="codeEditor" spellcheck="false" placeholder="// Loading..."></textarea>
-                                </div>
-                            </div>
-                            <div class="output-pane">
-                                <div class="pane-header">
-                                    <span class="pane-title">Lesson and requirements</span>
-                                </div>
-                                <div class="pane-body" id="challengeBrief">
-                                    <!-- Loaded by JS -->
-                                </div>
-                                <div class="language-guide" id="languageGuide" hidden></div>
-                            </div>
-                        </div>
-
-                        <div class="editor-footer">
+                        <footer class="editor-footer">
                             <div class="output-status">
                                 <span class="status-indicator"></span>
-                                <span class="status-text" id="outputStatus">Ready</span>
+                                <span class="status-text" id="outputStatus">Ready when you are</span>
                             </div>
                             <div class="editor-buttons">
-                                <button class="btn btn-secondary" id="runCodeBtn">
+                                <button class="btn btn-secondary" id="runCodeBtn" type="button">
                                     <span class="btn-icon">▶</span>
-                                    Run
+                                    Run code
                                 </button>
-                                <button class="btn btn-primary" id="submitCodeBtn">
+                                <button class="btn btn-primary" id="submitCodeBtn" type="button">
                                     <span class="btn-icon">✓</span>
-                                    Submit
+                                    Submit solution
                                 </button>
                             </div>
-                        </div>
+                        </footer>
 
-                        <div class="output-container">
+                        <section class="output-container" aria-live="polite" aria-label="Program output">
                             <div class="output-header">
-                                <span class="output-title">Output</span>
+                                <span class="output-title">Run output</span>
+                                <span class="output-hint">Your program’s output and errors appear here</span>
                             </div>
-                            <pre class="output-content" id="codeOutput">Run your code to see output here</pre>
-                        </div>
-                    </div>
+                            <pre class="output-content" id="codeOutput">Run your code to see the result.</pre>
+                        </section>
+                    </section>
                 </div>
             </section>
 
@@ -316,15 +338,15 @@
                 <div class="evidence-stats">
                     <div class="stat-card">
                         <span class="stat-value" id="evidenceTotal">0</span>
-                        <span class="stat-label">Submissions</span>
+                        <span class="stat-label">Verified submissions</span>
                     </div>
                     <div class="stat-card">
                         <span class="stat-value" id="evidencePassed">0</span>
-                        <span class="stat-label">Passed</span>
+                        <span class="stat-label">Passed submissions</span>
                     </div>
                     <div class="stat-card">
                         <span class="stat-value" id="evidenceAvg">0</span>
-                        <span class="stat-label">Avg Score</span>
+                        <span class="stat-label">Average verified score</span>
                     </div>
                 </div>
 
@@ -473,15 +495,15 @@
     </div>
 
     <!-- Scripts - Order matters! -->
-    <script src="js/utils.js?v=2026090701"></script>
-    <script src="js/learner-model.js?v=2026090701"></script>
-    <script src="js/curriculum.js?v=2026090701"></script>
-    <script src="js/mastery.js?v=2026090701"></script>
-    <script src="js/evidence.js?v=2026090701"></script>
-    <script src="js/adaptive-engine.js?v=2026090701"></script>
-    <script src="js/assessment.js?v=2026090701"></script>
-    <script src="js/ai-interface.js?v=2026090701"></script>
-    <script src="js/app.js?v=2026090701"></script>
+    <script src="js/utils.js?v=2026100506"></script>
+    <script src="js/learner-model.js?v=2026100506"></script>
+    <script src="js/curriculum.js?v=2026100506"></script>
+    <script src="js/mastery.js?v=2026100506"></script>
+    <script src="js/evidence.js?v=2026100506"></script>
+    <script src="js/adaptive-engine.js?v=2026100506"></script>
+    <script src="js/assessment.js?v=2026100506"></script>
+    <script src="js/ai-interface.js?v=2026100506"></script>
+    <script src="js/app.js?v=2026100506"></script>
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => navigator.serviceWorker.register('sw.js'));

@@ -1021,114 +1021,141 @@ function resolveSkillContent(skill, module, language) {
 // guided practice, independent task) if a short skill list runs out.
 // ---------------------------------------------------------------------------
 function rotateOptions(options, amount) {
-  return options.map((_, index) => options[(index + amount) % options.length]);
+  const shift = amount % options.length;
+  return options.map((_, index) => options[(index + shift) % options.length]);
 }
 
-function makeSkillQuestion(template, skill, skillIndex, templateIndex) {
-  let prompt, correct, distractors;
+function makeSkillQuestion(template, skill, otherSkills, skillIndex, templateIndex) {
+  let prompt;
+  let correct;
+  let distractors;
+  let explanation;
+
   if (template === 'definition') {
-    prompt = `Which statement best describes ${skill.name}?`;
+    prompt = `Which description best explains ${skill.name}?`;
     correct = skill.definition;
-    distractors = [
-      `${skill.name} is only a naming or formatting preference and does not affect behaviour.`,
-      `${skill.name} means copying the first solution found without checking its assumptions.`
-    ];
+    distractors = otherSkills.map(other => other.definition);
+    explanation = `${skill.definition} ${skill.why}`;
   } else if (template === 'application') {
-    prompt = `How should you apply ${skill.name} in practice?`;
+    prompt = `A teammate is applying ${skill.name}. Which approach best follows the lesson?`;
     correct = skill.how;
-    distractors = [
-      `Avoid checking inputs and outputs, because ${skill.name} should work by imitation alone.`,
-      `Use ${skill.name} only after the entire feature is finished, without trying a small example first.`
-    ];
-  } else if (template === 'mistake') {
-    prompt = `Which of these is a common mistake when using ${skill.name}?`;
+    distractors = otherSkills.map(other => other.how);
+    explanation = skill.how;
+  } else if (template === 'scenario') {
+    prompt = `Which situation is the best fit for ${skill.name}?`;
+    correct = skill.usage;
+    distractors = otherSkills.map(other => other.usage);
+    explanation = `${skill.usage} ${skill.why}`;
+  } else {
+    prompt = `Which action is most likely to cause a problem when using ${skill.name}?`;
     correct = skill.mistakes;
     distractors = [
-      `Testing the normal case, a boundary case, and a failure case before submitting.`,
-      `Explaining, in your own words, why the approach works before relying on it.`
+      `State the expected result first, then test a normal case and a relevant boundary case.`,
+      `Explain the reasoning behind the approach and check its assumptions before relying on it.`
     ];
-  } else {
-    prompt = `In which situation would you actually reach for ${skill.name}?`;
-    correct = skill.usage;
-    distractors = [
-      `Only when writing documentation, never when writing code.`,
-      `Only during a final review, never while first designing the solution.`
-    ];
+    explanation = `${skill.mistakes} A safer approach is to make the expected behaviour explicit and verify it with relevant cases.`;
   }
+
+  distractors = [...new Set(distractors.filter(option => option && option !== correct))].slice(0, 2);
+  const fallbackDistractors = [
+    `Choose the technique by habit without checking whether it fits the stated problem.`,
+    `Skip validation because a solution that looks reasonable is sufficient evidence.`
+  ];
+  for (const option of fallbackDistractors) {
+    if (distractors.length >= 2) break;
+    if (option !== correct && !distractors.includes(option)) distractors.push(option);
+  }
+
   const options = [correct, ...distractors];
   const shift = (skillIndex + templateIndex + 1) % options.length;
   return {
+    id: `${template}-${skillIndex}`,
+    skill: skill.name,
+    objective: `Explain and apply ${skill.name}.`,
     prompt,
     options: rotateOptions(options, shift),
-    answer: (options.length - shift) % options.length
+    answer: (options.length - shift) % options.length,
+    explanation
   };
 }
 
 function makeLessonLevelQuestion(kind, module, extras) {
-  const generic = [
-    'This lesson exists mainly to introduce vocabulary, with no expected practical application.',
-    'This only matters for a final exam and not for any real engineering task.'
+  const commonMisconceptions = [
+    'Copy a familiar solution without checking whether its assumptions match this problem.',
+    'Skip testing because a result that looks plausible is enough to prove the approach.'
   ];
+  let prompt;
+  let correct;
+  let explanation;
+
   if (kind === 'context') {
-    return {
-      prompt: `Why does ${module.title.toLowerCase()} actually matter in real engineering work?`,
-      options: rotateOptions([extras.context, ...generic], 1),
-      answer: 2
-    };
+    prompt = `Why does ${module.title.toLowerCase()} matter in real engineering work?`;
+    correct = extras.context;
+    explanation = extras.context;
+  } else if (kind === 'practice') {
+    prompt = 'What should you do before expanding the guided-practice solution?';
+    correct = extras.guidedPractice.steps[0];
+    explanation = `${extras.guidedPractice.steps[0]} The lesson uses small, checkable steps so assumptions can be verified early.`;
+  } else if (kind === 'independent') {
+    prompt = 'What makes the independent task different from the guided practice?';
+    correct = 'It asks you to transfer a lesson skill to a new situation rather than copy the worked example.';
+    explanation = `${correct} ${extras.independentTask.requirements[0]}`;
+  } else {
+    prompt = 'What is the main outcome you should be able to demonstrate after this lesson?';
+    correct = `Explain and independently apply ${module.title.toLowerCase()} to a relevant problem.`;
+    explanation = `The objective is to explain and independently apply ${module.title.toLowerCase()}, not only recognize its vocabulary.`;
   }
-  if (kind === 'goal') {
-    return {
-      prompt: `What is the actual goal of the guided practice in this lesson?`,
-      options: rotateOptions([extras.guidedPractice.goal, ...generic], 2),
-      answer: 1
-    };
-  }
-  if (kind === 'independent') {
-    return {
-      prompt: `What is the point of the independent task, compared to the guided practice?`,
-      options: rotateOptions([
-        'It requires applying the same skill to a new situation you choose yourself, without copying the guided example.',
-        ...generic
-      ], 0),
-      answer: 0
-    };
-  }
+
+  const options = [correct, ...commonMisconceptions];
+  const stableOrder = `${module.id}-${kind}`.split('').reduce((total, character) => total + character.charCodeAt(0), 0);
+  const shift = stableOrder % options.length;
+
   return {
-    prompt: `What should you do with each step of the guided practice?`,
-    options: rotateOptions([
-      extras.guidedPractice.steps[0],
-      ...generic
-    ], 1),
-    answer: 2
+    id: `lesson-${kind}-${stableOrder}`,
+    skill: null,
+    objective: module.lessonObjective || `Apply ${module.title}.`,
+    prompt,
+    options: rotateOptions(options, shift),
+    answer: (options.length - shift) % options.length,
+    explanation
   };
 }
 
 function buildQuestionBank(module, foundations, extras, targetCount) {
-  const templates = ['definition', 'application', 'mistake', 'scenario'];
+  const questionTypes = ['definition', 'application', 'scenario', 'mistake'];
   const questions = [];
+  const usableSkills = foundations.length
+    ? foundations
+    : [{
+        name: module.skills?.[0] || module.title,
+        definition: module.description || `A structured approach to ${module.title.toLowerCase()}.`,
+        why: `It helps solve the problems described in ${module.title.toLowerCase()}.`,
+        how: `State the problem, apply ${module.skills?.[0] || module.title} in a small step, and verify the result.`,
+        usage: `Use it when working on a problem related to ${module.title.toLowerCase()}.`,
+        mistakes: `Applying it without checking the problem, assumptions, and expected result.`
+      }];
 
-  templates.forEach((template, templateIndex) => {
-    foundations.forEach((skill, skillIndex) => {
-      if (questions.length >= targetCount) return;
-      questions.push(makeSkillQuestion(template, skill, skillIndex, templateIndex));
+  questionTypes.forEach((type, typeIndex) => {
+    usableSkills.forEach((skill, skillIndex) => {
+      questions.push(makeSkillQuestion(
+        type,
+        skill,
+        usableSkills.filter((_, index) => index !== skillIndex),
+        skillIndex,
+        typeIndex
+      ));
     });
   });
 
-  const lessonLevelKinds = ['context', 'goal', 'independent', 'practice-step'];
+  const lessonQuestionKinds = ['context', 'practice', 'independent', 'objective'];
   let kindIndex = 0;
-  while (questions.length < targetCount && kindIndex < lessonLevelKinds.length) {
-    questions.push(makeLessonLevelQuestion(lessonLevelKinds[kindIndex], module, extras));
-    kindIndex++;
-  }
-
-  // Extremely small skill lists (should not happen in this curriculum, but
-  // guarded anyway): cycle back through templates/skills rather than fail.
-  let cycle = 0;
   while (questions.length < targetCount) {
-    const template = templates[cycle % templates.length];
-    const skill = foundations[cycle % foundations.length];
-    questions.push(makeSkillQuestion(template, skill, cycle, cycle + 3));
-    cycle++;
+    questions.push(makeLessonLevelQuestion(
+      lessonQuestionKinds[kindIndex % lessonQuestionKinds.length],
+      module,
+      extras
+    ));
+    kindIndex += 1;
   }
 
   return questions.slice(0, targetCount);
@@ -1184,7 +1211,7 @@ function buildCodingTasks(module) {
 // ---------------------------------------------------------------------------
 // Builds the full 10-part lesson for a curriculum module.
 // ---------------------------------------------------------------------------
-function buildLesson(module, language = 'javascript') {
+function buildLesson(module, language = 'javascript', passThreshold = 70) {
   const context = LESSON_CONTEXT[module.title] ||
     `This shows up in real engineering work whenever a team needs ${module.title.toLowerCase()} to ship something reliable, not just something that runs once on a happy path.`;
 
@@ -1230,7 +1257,14 @@ function buildLesson(module, language = 'javascript') {
   // paralyzingly open-ended, but the learner still has to choose and adapt
   // one themselves rather than following a single fixed template.
   const independentTask = {
-    prompt: `Without reusing the guided-practice example directly, apply ${module.title.toLowerCase()} to a new situation of your own choosing that still uses at least one skill from this lesson: ${module.skills.join(', ')}. If you're stuck for a starting point, pick one of these two angles and adapt it: (a) a small real-world scenario where ${module.skills[0]} would actually be needed at work, or (b) a deliberately different edge case than the one used in the guided practice.`,
+    prompt: `Choose a new, small problem where you can apply ${module.skills.join(', ')}. Do not copy the guided-practice example; transfer the idea to a situation you understand.`,
+    steps: [
+      'State the problem, its input, and the result you expect before solving it.',
+      `Choose the lesson skill that best fits (${module.skills[0]}) and explain why it fits.`,
+      'Build the smallest solution or design that meets the stated requirement.',
+      'Check one normal case and one boundary or failure case against your expected result.',
+      'Explain one assumption or trade-off another engineer should know.'
+    ],
     requirements: [
       'State your own input and expected output before writing any code or design.',
       'Implement or describe the smallest solution that satisfies your stated requirement.',
@@ -1250,24 +1284,23 @@ function buildLesson(module, language = 'javascript') {
     'Copying a pattern or technique without being able to explain its trade-off.'
   ];
 
-  // Problem Solving and Architecture are theory-heavy: the readiness quiz
-  // itself is the graded evidence, so it stays at a full 10 questions.
-  // Programming and Debugging are coding-heavy: their real evidence comes
-  // from an actual executed, graded coding assessment in Labs (see
-  // buildCodingAssessment below), so the quiz here is a lighter 5-question
-  // conceptual check rather than a second full theory exam.
+  // HYDEV uses a consistent 10-question readiness check for every lesson.
+  // That keeps the lesson assessment predictable, evidence-based, and
+  // comparable across pillars while the practical lab remains the strongest
+  // proof of applied skill for coding-heavy modules.
   const isCodingPillar = module.pillarId === 'programming' || module.pillarId === 'debugging';
-  const quizLength = isCodingPillar ? 5 : 10;
+  const quizLength = 10;
 
   const questions = buildQuestionBank(module, foundations, {
     context, guidedPractice, independentTask
   }, quizLength);
 
   const nextStep = isCodingPillar
-    ? `This conceptual check keeps you honest before you write code, but it isn't the main evidence for this lesson -- the graded coding assessment in Labs is. Pass this check, then open Labs to submit real, executed code for ${module.skills[0]}.`
-    : `After this lesson, the assessment checks whether you can apply ${module.skills[0]} independently, not just recognize it. If you pass, the next recommendation moves to the next module in ${module.pillar}; if you struggle, expect a similar-skill review before moving on, per HYDEV's evidence-before-mastery rule.`;
+    ? `This 10-question readiness check is scored as evidence for the lesson, but the executed lab remains the strongest proof of applied skill. Pass this check and then open Labs to submit real code for ${module.skills[0]}.`
+    : `After this lesson, the 10-question readiness check confirms whether you can apply ${module.skills[0]} independently, not just recognize it. If you pass, the next recommendation moves to the next module in ${module.pillar}; if you struggle, expect a similar-skill review before moving on, per HYDEV's evidence-before-mastery rule.`;
 
   return {
+    passThreshold,
     // 1. Objective
     objective: `By the end of this lesson, you can explain and independently apply ${module.title.toLowerCase()}.`,
     // 2. Context
@@ -1410,6 +1443,241 @@ const DEFAULT_CHALLENGES = [
       'Loop through registered routes looking for a method + path match',
       'Handle the no-match case explicitly rather than letting it crash'
     ]
+  }
+];
+
+const DEBUGGING_CHALLENGES = [
+  {
+    id: 'debug-zero-default',
+    title: 'Zero Is a Valid Limit',
+    brief: 'This helper applies a default limit. It breaks when the caller explicitly passes 0. Trace the three cases and fix the defaulting logic without changing the inputs.',
+    pillar: 'Debugging',
+    pillarId: 'debugging',
+    moduleId: 'db-02',
+    lessonLabel: 'Console Logs',
+    level: 1,
+    difficulty: 'Foundational',
+    xp: 45,
+    language: 'JavaScript',
+    starterCode: 'function resolveLimit(limit) {\n  return limit || 10;\n}\n\nconsole.log(resolveLimit(0));\nconsole.log(resolveLimit(null));\nconsole.log(resolveLimit(5));\n',
+    starterCodeByLanguage: {
+      kotlin: 'fun resolveLimit(limit: Int?): Int {\n    return if (limit == 0) 10 else limit ?: 10\n}\n\nprintln(resolveLimit(0))\nprintln(resolveLimit(null))\nprintln(resolveLimit(5))\n'
+    },
+    expectedOutput: '0\n10\n5',
+    judgeOutput: '0\n10\n5',
+    skills: ['tracing', 'boundary values', 'default values'],
+    requirements: ['Keep an explicit zero as zero', 'Use 10 only when no limit was supplied', 'Preserve the result for a positive limit'],
+    hints: ['Compare the values 0 and null separately.', 'In JavaScript, 0 is falsy but it is still a supplied value.'],
+    summary: 'Trace a falsy-value bug and distinguish an explicit zero from a missing value.',
+    teaching: {
+      concept: 'Tracing boundary values through defaulting logic',
+      steps: ['Write down the input and output for each call.', 'Compare explicit zero with a missing value.', 'Change only the defaulting condition, then rerun all three cases.'],
+      selfCheck: 'Can the corrected function distinguish zero from null?',
+      transfer: 'Where might a zero setting be meaningful, such as retries or pagination?'
+    }
+  },
+  {
+    id: 'debug-condition-order',
+    title: 'Threshold Checks in the Right Order',
+    brief: 'A score classifier has three bands, but its broad condition catches values meant for the highest band. Reorder the checks so every range is reachable.',
+    pillar: 'Debugging',
+    pillarId: 'debugging',
+    moduleId: 'db-03',
+    lessonLabel: 'Basic Tracing',
+    level: 1,
+    difficulty: 'Foundational',
+    xp: 50,
+    language: 'JavaScript',
+    starterCode: 'function classify(score) {\n  if (score >= 50) return "Pass";\n  if (score >= 80) return "Distinction";\n  return "Retry";\n}\n\nconsole.log(classify(49));\nconsole.log(classify(50));\nconsole.log(classify(80));\n',
+    starterCodeByLanguage: {
+      kotlin: 'fun classify(score: Int): String {\n    if (score >= 50) return "Pass"\n    if (score >= 80) return "Distinction"\n    return "Retry"\n}\n\nprintln(classify(49))\nprintln(classify(50))\nprintln(classify(80))\n'
+    },
+    expectedOutput: 'Retry\nPass\nDistinction',
+    judgeOutput: 'Retry\nPass\nDistinction',
+    skills: ['condition order', 'branch coverage', 'boundary checks'],
+    requirements: ['Keep scores below 50 in Retry', 'Classify 50 through 79 as Pass', 'Classify 80 and above as Distinction'],
+    hints: ['Trace score 85 from the first condition downward.', 'Check the most specific or highest threshold before a broader threshold.'],
+    summary: 'Find an unreachable branch by tracing overlapping conditions.',
+    teaching: {
+      concept: 'Control-flow tracing and overlapping conditions',
+      steps: ['Trace score 85 through the current branches.', 'Identify which condition captures it first.', 'Reorder the conditions and test values on both sides of each threshold.'],
+      selfCheck: 'Does each threshold range reach exactly one intended branch?',
+      transfer: 'Where else can broad checks hide later cases, such as access-control rules?'
+    }
+  },
+  {
+    id: 'debug-mutation-iteration',
+    title: 'Removing Items While Iterating',
+    brief: 'The cleanup loop removes inactive flags from a list while moving forward. Some inactive entries are skipped. Fix the iteration so only active flags remain.',
+    pillar: 'Debugging',
+    pillarId: 'debugging',
+    moduleId: 'db-04',
+    lessonLabel: 'Logic Errors',
+    level: 2,
+    difficulty: 'Intermediate',
+    xp: 70,
+    language: 'JavaScript',
+    starterCode: 'function keepActive(flags) {\n  for (let index = 0; index < flags.length; index++) {\n    if (!flags[index]) flags.splice(index, 1);\n  }\n  return flags;\n}\n\nconsole.log(keepActive([false, false, true, false, true]).join(","));\n',
+    starterCodeByLanguage: {
+      kotlin: 'fun keepActive(flags: MutableList<Boolean>): List<Boolean> {\n    var index = 0\n    while (index < flags.size) {\n        if (!flags[index]) flags.removeAt(index)\n        index++\n    }\n    return flags\n}\n\nprintln(keepActive(mutableListOf(false, false, true, false, true)).joinToString(","))\n'
+    },
+    expectedOutput: 'true,true',
+    judgeOutput: 'true,true',
+    skills: ['mutation', 'loop invariants', 'collection filtering'],
+    requirements: ['Remove every inactive value', 'Do not skip values after a removal', 'Keep the original order of active values'],
+    hints: ['After removing an element, the next element shifts into the current index.', 'Consider building a filtered result instead of mutating the list in a forward loop.'],
+    summary: 'Debug index shifting caused by mutating a collection during iteration.',
+    teaching: {
+      concept: 'Collection mutation and loop-index invariants',
+      steps: ['Trace the index after the first removal.', 'Mark which values the loop visits and which it skips.', 'Use a safe filtering strategy and preserve input order.'],
+      selfCheck: 'Does the loop inspect the value that shifts into a removed index?',
+      transfer: 'What risks appear when changing a shared collection during iteration?'
+    }
+  },
+  {
+    id: 'debug-accumulator-reset',
+    title: 'The Total Keeps Resetting',
+    brief: 'A score report should total all entries, but the accumulator is overwritten on every pass. Find the state update that loses earlier values.',
+    pillar: 'Debugging',
+    pillarId: 'debugging',
+    moduleId: 'db-06',
+    lessonLabel: 'Using Breakpoints',
+    level: 2,
+    difficulty: 'Intermediate',
+    xp: 75,
+    language: 'JavaScript',
+    starterCode: 'function totalScores(scores) {\n  let total = 0;\n  for (const score of scores) {\n    total = score;\n  }\n  return total;\n}\n\nconsole.log(totalScores([4, 7, 2, 9]));\n',
+    starterCodeByLanguage: {
+      kotlin: 'fun totalScores(scores: List<Int>): Int {\n    var total = 0\n    for (score in scores) {\n        total = score\n    }\n    return total\n}\n\nprintln(totalScores(listOf(4, 7, 2, 9)))\n'
+    },
+    expectedOutput: '22',
+    judgeOutput: '22',
+    skills: ['state tracing', 'accumulators', 'breakpoint inspection'],
+    requirements: ['Include every score exactly once', 'Keep the total across loop iterations', 'Return the combined total'],
+    hints: ['Watch total after each loop iteration.', 'The update should combine the old total with the current score.'],
+    summary: 'Trace loop state to find an accumulator overwrite.',
+    teaching: {
+      concept: 'Inspecting changing state one iteration at a time',
+      steps: ['Record total before and after each iteration.', 'Find the first iteration where prior state is lost.', 'Change the update and verify the complete sum.'],
+      selfCheck: 'Can you predict the accumulator value after every input item?',
+      transfer: 'Which counters, totals, or rolling values should be watched in a debugger?'
+    }
+  },
+  {
+    id: 'debug-cache-invalidation',
+    title: 'The Cache Returns an Old Balance',
+    brief: 'The first read is cached. After the account is updated, the next read still returns the old balance. Fix the stale-cache bug without bypassing the cache for normal reads.',
+    pillar: 'Debugging',
+    pillarId: 'debugging',
+    moduleId: 'db-09',
+    lessonLabel: 'Integration Bugs',
+    level: 3,
+    difficulty: 'Advanced',
+    xp: 110,
+    language: 'JavaScript',
+    starterCode: 'const balances = new Map([["acct-7", 10]]);\nconst cache = new Map();\n\nfunction getBalance(id) {\n  if (!cache.has(id)) cache.set(id, balances.get(id) ?? 0);\n  return cache.get(id);\n}\n\nfunction updateBalance(id, amount) {\n  balances.set(id, amount);\n  // Bug: the cached value is not refreshed or invalidated.\n}\n\nconsole.log(getBalance("acct-7"));\nupdateBalance("acct-7", 25);\nconsole.log(getBalance("acct-7"));\n',
+    starterCodeByLanguage: {
+      kotlin: 'val balances = mutableMapOf("acct-7" to 10)\nval cache = mutableMapOf<String, Int>()\n\nfun getBalance(id: String): Int = cache.getOrPut(id) { balances[id] ?: 0 }\n\nfun updateBalance(id: String, amount: Int) {\n    balances[id] = amount\n    // Bug: the cached value is not refreshed or invalidated.\n}\n\nprintln(getBalance("acct-7"))\nupdateBalance("acct-7", 25)\nprintln(getBalance("acct-7"))\n'
+    },
+    expectedOutput: '10\n25',
+    judgeOutput: '10\n25',
+    skills: ['cache invalidation', 'state consistency', 'integration debugging'],
+    requirements: ['Keep the first read at 10', 'Make the next read return 25 after the update', 'Keep cache behavior for unchanged values'],
+    hints: ['Trace both the backing map and the cache after the update.', 'Invalidate or refresh the entry at the point where data changes.'],
+    summary: 'Trace data across a cache and backing store to repair stale reads.',
+    teaching: {
+      concept: 'Consistency between a cache and its source of truth',
+      steps: ['List the backing-store and cache values after each operation.', 'Identify which read path returns stale data.', 'Update or invalidate the cache when the source value changes.'],
+      selfCheck: 'After a successful update, can any read still observe the previous value?',
+      transfer: 'How would you handle invalidation when multiple services cache the same record?'
+    }
+  },
+  {
+    id: 'debug-retry-budget',
+    title: 'The Retry Budget Is One Short',
+    brief: 'The operation succeeds on its third call, but the retry helper stops after two total attempts. Interpret maxRetries as retries after the initial attempt, then correct the loop boundary.',
+    pillar: 'Debugging',
+    pillarId: 'debugging',
+    moduleId: 'db-04',
+    lessonLabel: 'Logic Errors',
+    level: 3,
+    difficulty: 'Advanced',
+    xp: 100,
+    language: 'JavaScript',
+    starterCode: 'let calls = 0;\nfunction flakyOperation() {\n  calls++;\n  return calls >= 3;\n}\n\nfunction runWithRetries(maxRetries) {\n  let retries = 0;\n  while (retries < maxRetries) {\n    if (flakyOperation()) return true;\n    retries++;\n  }\n  return false;\n}\n\nconsole.log(runWithRetries(2));\nconsole.log(calls);\n',
+    starterCodeByLanguage: {
+      kotlin: 'var calls = 0\nfun flakyOperation(): Boolean {\n    calls++\n    return calls >= 3\n}\n\nfun runWithRetries(maxRetries: Int): Boolean {\n    var retries = 0\n    while (retries < maxRetries) {\n        if (flakyOperation()) return true\n        retries++\n    }\n    return false\n}\n\nprintln(runWithRetries(2))\nprintln(calls)\n'
+    },
+    expectedOutput: 'true\n3',
+    judgeOutput: 'true\n3',
+    skills: ['retry boundaries', 'state transitions', 'failure recovery'],
+    requirements: ['Always allow the initial attempt', 'Allow up to maxRetries additional attempts', 'Stop immediately when the operation succeeds'],
+    hints: ['Separate the initial attempt from the number of additional retries.', 'Check the loop boundary and verify the exact call count.'],
+    summary: 'Debug an off-by-one error in a stateful retry policy.',
+    teaching: {
+      concept: 'Retry state and attempt-budget boundaries',
+      steps: ['Write down the intended total attempts for two retries.', 'Trace the counter before each operation call.', 'Verify success and exhaustion behavior.'],
+      selfCheck: 'Does maxRetries count retries, or all attempts including the first?',
+      transfer: 'Why should retry policies distinguish transient from permanent failures?'
+    }
+  },
+  {
+    id: 'debug-idempotent-events',
+    title: 'Duplicate Events Change the Balance',
+    brief: 'A consumer can receive the same event more than once. The processed-event check uses the wrong field, so duplicate credits are applied. Make event processing idempotent by event ID.',
+    pillar: 'Debugging',
+    pillarId: 'debugging',
+    moduleId: 'db-12',
+    lessonLabel: 'Distributed Systems',
+    level: 4,
+    difficulty: 'Expert',
+    xp: 160,
+    language: 'JavaScript',
+    starterCode: 'const events = [\n  { id: "evt-1", amount: 100 },\n  { id: "evt-2", amount: 50 },\n  { id: "evt-1", amount: 100 },\n  { id: "evt-3", amount: -25 },\n  { id: "evt-2", amount: 50 }\n];\n\nfunction applyEvents(events) {\n  const processedIds = new Set();\n  let balance = 0;\n  for (const event of events) {\n    if (processedIds.has(event.amount)) continue;\n    balance += event.amount;\n    processedIds.add(event.id);\n  }\n  return balance;\n}\n\nconsole.log(applyEvents(events));\n',
+    starterCodeByLanguage: {
+      kotlin: 'data class Event(val id: String, val amount: Int)\n\nval events = listOf(\n    Event("evt-1", 100),\n    Event("evt-2", 50),\n    Event("evt-1", 100),\n    Event("evt-3", -25),\n    Event("evt-2", 50)\n)\n\nfun applyEvents(events: List<Event>): Int {\n    val processedIds = mutableSetOf<String>()\n    var balance = 0\n    for (event in events) {\n        if (processedIds.contains(event.amount.toString())) continue\n        balance += event.amount\n        processedIds.add(event.id)\n    }\n    return balance\n}\n\nprintln(applyEvents(events))\n'
+    },
+    expectedOutput: '125',
+    judgeOutput: '125',
+    skills: ['idempotency', 'event deduplication', 'consistency'],
+    requirements: ['Deduplicate by event ID, not event amount', 'Apply each unique event exactly once', 'Preserve the order-independent final total'],
+    hints: ['Trace the set contents after each event.', 'The same event ID must be ignored even if it is delivered again.'],
+    summary: 'Investigate duplicate delivery and repair an idempotency check.',
+    teaching: {
+      concept: 'Idempotent event handling under at-least-once delivery',
+      steps: ['Trace the event ID and amount separately.', 'Check which identifier is stored and which value is tested.', 'Deduplicate with a stable unique event ID and rerun duplicated deliveries.'],
+      selfCheck: 'Would replaying the same event change the result a second time?',
+      transfer: 'How should an event consumer persist deduplication state across restarts?'
+    }
+  },
+  {
+    id: 'debug-circuit-breaker',
+    title: 'The Circuit Opens One Failure Late',
+    brief: 'This service guard should block calls after two consecutive failures. Its comparison opens the circuit only after a third failure. Fix the state transition and keep successful calls able to reset the failure count.',
+    pillar: 'Debugging',
+    pillarId: 'debugging',
+    moduleId: 'db-10',
+    lessonLabel: 'Production Debugging',
+    level: 4,
+    difficulty: 'Expert',
+    xp: 150,
+    language: 'JavaScript',
+    starterCode: 'function createCircuitBreaker(threshold) {\n  let failures = 0;\n  let open = false;\n  return function run(operation) {\n    if (open) return "BLOCKED";\n    const succeeded = operation();\n    if (succeeded) {\n      failures = 0;\n      return "OK";\n    }\n    failures++;\n    if (failures > threshold) open = true;\n    return "ERROR";\n  };\n}\n\nconst run = createCircuitBreaker(2);\nconsole.log(run(() => false));\nconsole.log(run(() => true));\nconsole.log(run(() => false));\nconsole.log(run(() => false));\nconsole.log(run(() => true));\n',
+    starterCodeByLanguage: {
+      kotlin: 'class CircuitBreaker(private val threshold: Int) {\n    private var failures = 0\n    private var open = false\n\n    fun run(operation: () -> Boolean): String {\n        if (open) return "BLOCKED"\n        if (operation()) {\n            failures = 0\n            return "OK"\n        }\n        failures++\n        if (failures > threshold) open = true\n        return "ERROR"\n    }\n}\n\nval run = CircuitBreaker(2)\nprintln(run.run { false })\nprintln(run.run { true })\nprintln(run.run { false })\nprintln(run.run { false })\nprintln(run.run { true })\n'
+    },
+    expectedOutput: 'ERROR\nOK\nERROR\nERROR\nBLOCKED',
+    judgeOutput: 'ERROR\nOK\nERROR\nERROR\nBLOCKED',
+    skills: ['state machines', 'failure thresholds', 'production diagnostics'],
+    requirements: ['Open after exactly two consecutive failures', 'Block the next operation after opening', 'Reset the failure count after a success before the threshold'],
+    hints: ['Trace the failure count after each call.', 'Compare the threshold condition with the requirement “after two failures.”', 'Test the closed, opening, and open states separately.'],
+    summary: 'Debug a production-style state machine with failure thresholds and blocked requests.',
+    teaching: {
+      concept: 'Tracing production resilience state transitions',
+      steps: ['Draw the closed and open states.', 'Trace the counter and state after every operation.', 'Correct the threshold boundary and test an operation after the circuit opens.'],
+      selfCheck: 'Can a request reach the dependency after the configured threshold is reached?',
+      transfer: 'What evidence would you log to diagnose a real circuit-breaker incident?'
+    }
   }
 ];
 
@@ -1786,11 +2054,13 @@ HYDEV.Curriculum = {
   modules: [],
   rawModuleSource: null,
   teachingLanguage: 'javascript',
+  passThreshold: 70,
   completed: new Set(),
   studied: new Set(),
 
   async init() {
     this.teachingLanguage = HYDEV.Utils.storage.get('teaching-language') || 'javascript';
+    await this.loadAssessmentSettings();
     await this.loadCatalog();
     this.loadChallenges();
     const saved = HYDEV.Utils.storage.get('completed') || [];
@@ -1801,6 +2071,22 @@ HYDEV.Curriculum = {
 
   getTeachingLanguage() {
     return this.teachingLanguage;
+  },
+
+  async loadAssessmentSettings() {
+    try {
+      const response = await fetch('data/config.json');
+      if (!response.ok) throw new Error(`Assessment settings request failed: ${response.status}`);
+      const config = await response.json();
+      const threshold = Number(config?.mastery?.minPassingScore);
+      if (!Number.isFinite(threshold) || threshold < 0 || threshold > 100) {
+        throw new Error('data/config.json must define mastery.minPassingScore between 0 and 100.');
+      }
+      this.passThreshold = threshold;
+    } catch (error) {
+      console.error('Assessment pass threshold could not be loaded; using the documented 70% default:', error);
+      this.passThreshold = 70;
+    }
   },
 
   // Changing the teaching language rebuilds every module's lesson content
@@ -1826,7 +2112,7 @@ HYDEV.Curriculum = {
           level: level.level,
           levelName: level.name
         };
-        enriched.lesson = buildLesson(enriched, this.teachingLanguage);
+        enriched.lesson = buildLesson(enriched, this.teachingLanguage, this.passThreshold);
         return enriched;
       }))
     );
@@ -1845,11 +2131,22 @@ HYDEV.Curriculum = {
   },
 
   loadChallenges() {
-    const practicalChallenges = DEFAULT_CHALLENGES.map(c => ({
-      ...c,
-      teaching: TEACHING_PLANS[c.id],
-      completed: false
-    }));
+    const practicalChallenges = [...DEFAULT_CHALLENGES, ...DEBUGGING_CHALLENGES]
+      .filter(challenge => ['programming', 'debugging'].includes(challenge.pillarId))
+      .map(challenge => {
+        const relatedModule = this.modules.find(module => module.id === challenge.moduleId)
+          || this.modules.find(module => module.pillarId === challenge.pillarId);
+        return {
+          ...challenge,
+          moduleId: relatedModule?.id || null,
+          lessonLabel: challenge.lessonLabel || relatedModule?.title || `${challenge.pillar} foundations`,
+          summary: challenge.summary || (challenge.pillarId === 'programming'
+            ? 'Practice a core programming pattern with a clear task, a minimal starter, and a concrete output target.'
+            : 'Locate the issue in a small program, fix it, and verify the correct runtime behavior.'),
+          teaching: challenge.teaching || TEACHING_PLANS[challenge.id],
+          completed: false
+        };
+      });
     const moduleAssessments = this.modules.map(module => {
       const codingAssessment = MODULE_CODING_ASSESSMENTS[module.id];
 
@@ -1863,6 +2160,8 @@ HYDEV.Curriculum = {
           moduleId: module.id,
           title: `${module.title} assessment`,
           brief: codingAssessment.prompt,
+          lessonLabel: module.title,
+          summary: `This lab extends the ${module.title} lesson and checks whether you can apply ${module.skills.join(', ')} in a working solution.`,
           pillar: module.pillar,
           pillarId: module.pillarId,
           level: module.level,
@@ -1895,6 +2194,8 @@ HYDEV.Curriculum = {
         moduleId: module.id,
         title: `${module.title} assessment`,
         brief: `Apply the concepts from ${module.title} in a practical engineering task: 5 concept checks, then 5 concrete coding tasks.`,
+        lessonLabel: module.title,
+        summary: `This lab extends the ${module.title} lesson and measures whether you can use ${module.skills.join(', ')} without copying the guided example.`,
         pillar: module.pillar,
         pillarId: module.pillarId,
         level: module.level,

@@ -177,7 +177,17 @@ HYDEV.App = {
     });
     document.getElementById('browseCurriculumBtn')?.addEventListener('click', () => this.navigateTo('curriculum'));
     document.getElementById('backToCurriculumBtn')?.addEventListener('click', () => this.navigateTo('curriculum'));
-    document.getElementById('completeLessonBtn')?.addEventListener('click', () => this.completeDedicatedLesson());
+    document.getElementById('completeLessonBtn')?.addEventListener('click', () => this.scrollToLessonAssessment());
+    document.getElementById('lessonContent')?.addEventListener('change', event => {
+      if (event.target.matches('.lesson-question input[type="radio"]')) this.saveLessonAssessmentDraft();
+    });
+    document.getElementById('lessonContent')?.addEventListener('input', event => {
+      if (event.target.matches('#lessonReflectionInput')) this.saveLessonAssessmentDraft();
+    });
+    document.getElementById('lessonContent')?.addEventListener('click', event => {
+      if (event.target.closest('#submitLessonAssessmentBtn')) this.submitDedicatedLessonAssessment();
+      if (event.target.closest('[data-lesson-retry]')) this.retryLessonAssessment();
+    });
     document.getElementById('openLessonAssessmentBtn')?.addEventListener('click', () => {
       const assessment = HYDEV.Curriculum.getChallenge(`module-${this.state.lessonModuleId}`);
       if (assessment) this.startChallenge(assessment.id);
@@ -187,6 +197,17 @@ HYDEV.App = {
     document.getElementById('resetCodeBtn')?.addEventListener('click', () => this.resetCode());
     document.getElementById('runCodeBtn')?.addEventListener('click', () => this.runCode());
     document.getElementById('submitCodeBtn')?.addEventListener('click', () => this.submitCode());
+    document.getElementById('labSearch')?.addEventListener('input', () => this.filterLabs());
+    document.querySelectorAll('.lab-filter[data-lab-filter]').forEach(button => {
+      button.addEventListener('click', () => {
+        document.querySelectorAll('.lab-filter[data-lab-filter]').forEach(filter => {
+          const active = filter === button;
+          filter.classList.toggle('active', active);
+          filter.setAttribute('aria-pressed', String(active));
+        });
+        this.filterLabs();
+      });
+    });
 
     // Language select
     document.getElementById('languageSelect')?.addEventListener('change', () => {
@@ -567,13 +588,29 @@ HYDEV.App = {
     if (progressTime) progressTime.textContent = value;
   },
 
-  // Renders the full 10-part lesson (see js/curriculum.js buildLesson for the model).
+  // Renders the complete lesson, restoring any locally saved assessment draft.
   renderLesson() {
     const module = HYDEV.Curriculum?.getModules().find(item => item.id === this.state.lessonModuleId);
     const content = document.getElementById('lessonContent');
     if (!module || !content) return;
 
     const lesson = module.lesson;
+    const assessmentState = this.getLessonAssessmentState(module.id);
+    const latestAttempt = assessmentState.draft.inProgress
+      ? null
+      : assessmentState.attempts[assessmentState.attempts.length - 1] || null;
+    const latestAttemptEvidenceRecorded = latestAttempt
+      ? latestAttempt.evidenceRecorded !== false ||
+        HYDEV.Evidence?.getAll().some(item => item.metadata?.attemptId === latestAttempt.id)
+      : false;
+    const displayedAnswers = latestAttempt ? latestAttempt.answers : assessmentState.draft.answers;
+    const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, character => ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;'
+    })[character]);
     const sections = [
       { id: 'objective', label: 'Objective' },
       { id: 'context', label: 'Why it matters' },
@@ -587,7 +624,7 @@ HYDEV.App = {
     ];
 
     document.getElementById('lessonPageTitle').textContent = module.title;
-    document.getElementById('lessonPageSubtitle').textContent = `${module.pillar} · ${module.levelName} · This lesson stands on its own.`;
+    document.getElementById('lessonPageSubtitle').textContent = `${module.pillar} · ${module.levelName} · Learn the idea, practise it, then check your understanding.`;
 
     // Some skill examples are pure code wrapped in backticks (mostly the
     // programming/OOP skills); others are a narrative sentence with a
@@ -672,6 +709,7 @@ HYDEV.App = {
         <div class="lesson-block-body">
           <span class="lesson-block-badge">06</span><h2>Apply it on your own</h2>
           <p class="lesson-prose">${lesson.independentTask.prompt}</p>
+          <ol class="lesson-prose lesson-steps">${lesson.independentTask.steps.map(step => `<li>${escapeHtml(step)}</li>`).join('')}</ol>
           <ul class="lesson-prose">${lesson.independentTask.requirements.map(req => `<li>${req}</li>`).join('')}</ul>
         </div>
       </section>
@@ -680,27 +718,62 @@ HYDEV.App = {
         <div class="lesson-block-body">
           <span class="lesson-block-badge">07</span><h2>Explain it to yourself</h2>
           <p class="lesson-prose">${lesson.reflection.prompt}</p>
-          <textarea class="reflection-input" id="lessonReflectionInput" rows="3" placeholder="Write a couple of sentences in your own words..."></textarea>
+          <label class="reflection-label" for="lessonReflectionInput">Your reflection (optional)</label>
+          <textarea class="reflection-input" id="lessonReflectionInput" rows="3" placeholder="What would you use again, and what will you watch out for?">${escapeHtml(assessmentState.draft.reflection)}</textarea>
           <p class="reflection-note">${lesson.reflection.purpose}</p>
         </div>
       </section>
 
       <section id="lesson-sec-evaluation" class="lesson-block lesson-block--evaluation assessment-question-block">
         <div class="lesson-block-body">
-          <span class="lesson-block-badge">08</span><h2>Readiness check — ${lesson.questions.length} questions</h2>
-          <p class="lesson-prose">${lesson.isCodingPillar
-            ? `Answer all ${lesson.questions.length} questions correctly to unlock the graded coding assessment in Labs -- the real evidence for this lesson comes from executed code, not this check.`
-            : `All ${lesson.questions.length} questions must be answered correctly to unlock the practical assessment. They cover definitions, application, common mistakes, and when (and when not) to use each skill.`}</p>
+          <span class="lesson-block-badge">08</span><h2>Readiness check</h2>
+          <p class="lesson-prose">Use this check to retrieve and apply what you have learned. Answer every question; each one targets a lesson skill. You need ${lesson.passThreshold || 70}% to pass. You can review your answers and explanations after submitting.</p>
+          <div class="lesson-assessment-progress" aria-live="polite">
+            <span id="lessonAnsweredCount">0 of ${lesson.questions.length} answered</span>
+            <span>Pass mark: ${lesson.passThreshold || 70}%</span>
+          </div>
+          <p class="lesson-assessment-message" id="lessonAssessmentMessage" role="alert" aria-live="assertive"></p>
+          ${latestAttempt ? `
+            <section class="lesson-result ${latestAttempt.passed && latestAttemptEvidenceRecorded ? 'lesson-result--pass' : 'lesson-result--retry'}" aria-labelledby="lesson-result-heading" role="status" aria-live="polite">
+              <div class="lesson-result-score">${latestAttempt.score}%</div>
+              <div class="lesson-result-copy">
+                <h3 id="lesson-result-heading">${latestAttempt.passed && latestAttemptEvidenceRecorded ? 'Readiness check passed' : latestAttempt.passed ? 'Evidence could not be recorded' : 'Keep practising, then try again'}</h3>
+                <p>You answered ${latestAttempt.correctCount} of ${lesson.questions.length} correctly. ${latestAttempt.passed && latestAttemptEvidenceRecorded
+                  ? (lesson.isCodingPillar
+                    ? 'Your lesson evidence is recorded and the practical coding assessment is now available.'
+                    : 'Your lesson evidence is recorded. Continue along your learning path when you are ready.')
+                  : latestAttempt.passed
+                    ? 'Your score was saved, but its evidence could not be recorded. No progression was unlocked; check browser storage and try another attempt.'
+                    : `You need ${lesson.passThreshold || 70}% to pass. Review the explanations below before another attempt.`}</p>
+              </div>
+              <button class="btn btn-secondary" type="button" data-lesson-retry>${latestAttempt.passed && latestAttemptEvidenceRecorded ? 'Retake check' : 'Try again'}</button>
+            </section>
+          ` : ''}
           <div class="lesson-questions">
             ${lesson.questions.map((question, index) => `
-              <fieldset class="lesson-question">
-                <legend>${index + 1}. ${question.prompt}</legend>
-                ${question.options.map((option, optionIndex) => `
-                  <label><input type="radio" name="lesson-question-${index}" value="${optionIndex}"> <span>${option}</span></label>
-                `).join('')}
+              <fieldset class="lesson-question ${latestAttempt ? (Number(latestAttempt.answers[index]) === question.answer ? 'lesson-question--correct' : 'lesson-question--incorrect') : ''}" ${latestAttempt ? 'disabled' : ''}>
+                <legend><span class="lesson-question-number">${String(index + 1).padStart(2, '0')}</span>${escapeHtml(question.prompt)}</legend>
+                ${question.options.map((option, optionIndex) => {
+                  const selected = Number(displayedAnswers[index]) === optionIndex;
+                  const correct = latestAttempt && optionIndex === question.answer;
+                  return `
+                    <label class="${correct ? 'lesson-answer--correct' : ''} ${latestAttempt && selected && !correct ? 'lesson-answer--incorrect' : ''}">
+                      <input type="radio" name="lesson-question-${index}" value="${optionIndex}" ${selected ? 'checked' : ''} ${latestAttempt ? 'disabled' : ''}>
+                      <span>${escapeHtml(option)}</span>
+                      ${correct ? '<span class="lesson-answer-mark">Correct answer</span>' : ''}
+                    </label>
+                  `;
+                }).join('')}
+                ${latestAttempt ? `
+                  <div class="lesson-question-feedback ${Number(latestAttempt.answers[index]) === question.answer ? 'is-correct' : 'is-incorrect'}">
+                    <strong>${Number(latestAttempt.answers[index]) === question.answer ? 'Correct' : 'Review this concept'}</strong>
+                    <p>${escapeHtml(question.explanation)}</p>
+                  </div>
+                ` : ''}
               </fieldset>
             `).join('')}
           </div>
+          ${latestAttempt ? '' : `<button class="btn btn-primary lesson-assessment-submit" id="submitLessonAssessmentBtn" type="button">Submit readiness check</button>`}
         </div>
       </section>
 
@@ -711,16 +784,21 @@ HYDEV.App = {
         </div>
       </section>
     `;
-    const readiness = document.getElementById('lessonReadiness');
-    readiness.innerHTML = `<option value="">Choose a skill taught in this lesson</option>${module.skills.map(skill => `<option value="${skill}">${skill}</option>`).join('')}<option value="wrong">A topic not taught here</option>`;
-    document.getElementById('lessonReadConfirm').checked = false;
-    document.getElementById('completeLessonBtn').disabled = HYDEV.Curriculum.studied.has(module.id);
-    document.getElementById('openLessonAssessmentBtn').disabled = !HYDEV.Curriculum.studied.has(module.id);
+    const questionCount = document.getElementById('lessonQuestionCount');
+    if (questionCount) questionCount.textContent = lesson.questions.length;
+    const answered = Object.keys(displayedAnswers).filter(index => displayedAnswers[index] !== undefined).length;
+    const answeredCount = document.getElementById('lessonAnsweredCount');
+    if (answeredCount) answeredCount.textContent = `${answered} of ${lesson.questions.length} answered`;
+    const assessmentStart = document.getElementById('completeLessonBtn');
+    if (assessmentStart) assessmentStart.textContent = latestAttempt ? 'Review your result' : 'Start readiness check';
+    const practicalAssessmentButton = document.getElementById('openLessonAssessmentBtn');
+    practicalAssessmentButton.disabled = !HYDEV.Curriculum.studied.has(module.id);
+    practicalAssessmentButton.hidden = !lesson.isCodingPillar;
     const sidebarDesc = document.getElementById('lessonSidebarDescription');
     if (sidebarDesc) {
       sidebarDesc.textContent = lesson.isCodingPillar
-        ? `Read each section, do the guided and independent practice, write your reflection, then answer all ${lesson.questions.length} questions. This is a lighter conceptual check -- passing unlocks the graded coding assessment in Labs, which is the real evidence for this lesson.`
-        : `Read each section, do the guided and independent practice, write your reflection, then answer all ${lesson.questions.length} questions. Submitting scores your answers as real evidence -- passing (70+) unlocks the practical coding assessment.`;
+        ? `Answer all ${lesson.questions.length} questions. A score of ${lesson.passThreshold || 70}% records your lesson evidence and unlocks the practical coding assessment.`
+        : `Answer all ${lesson.questions.length} questions. A score of ${lesson.passThreshold || 70}% records your lesson evidence and lets you continue along your learning path.`;
     }
 
     // Plain JS scroll -- deliberately not a real #hash anchor, since this
@@ -735,66 +813,171 @@ HYDEV.App = {
     });
   },
 
-  completeDedicatedLesson() {
+  getLessonAssessmentState(moduleId) {
+    const stored = HYDEV.Utils.storage.get('lesson-assessment-state') || {};
+    const saved = stored[moduleId];
+    if (!saved || typeof saved !== 'object') {
+      return { draft: { answers: {}, reflection: '', inProgress: false }, attempts: [] };
+    }
+    return {
+      draft: {
+        answers: saved.draft?.answers && typeof saved.draft.answers === 'object' ? saved.draft.answers : {},
+        reflection: typeof saved.draft?.reflection === 'string' ? saved.draft.reflection : '',
+        inProgress: Boolean(saved.draft?.inProgress)
+      },
+      attempts: Array.isArray(saved.attempts) ? saved.attempts : []
+    };
+  },
+
+  saveLessonAssessmentState(moduleId, state) {
+    const stored = HYDEV.Utils.storage.get('lesson-assessment-state') || {};
+    stored[moduleId] = state;
+    return HYDEV.Utils.storage.set('lesson-assessment-state', stored);
+  },
+
+  saveLessonAssessmentDraft() {
+    const moduleId = this.state.lessonModuleId;
+    if (!moduleId) return;
+    const state = this.getLessonAssessmentState(moduleId);
+    if (!state.draft.inProgress && state.attempts.length) return;
+
+    const answers = {};
+    document.querySelectorAll('#lessonContent .lesson-question input[type="radio"]:checked').forEach(input => {
+      const index = input.name.slice('lesson-question-'.length);
+      answers[index] = input.value;
+      input.closest('fieldset')?.removeAttribute('aria-invalid');
+    });
+    state.draft = {
+      answers,
+      reflection: document.getElementById('lessonReflectionInput')?.value || '',
+      inProgress: true
+    };
+
+    const module = HYDEV.Curriculum?.getModules().find(item => item.id === moduleId);
+    const answeredCount = Object.keys(answers).length;
+    const countLabel = document.getElementById('lessonAnsweredCount');
+    if (countLabel && module) countLabel.textContent = `${answeredCount} of ${module.lesson.questions.length} answered`;
+    const message = document.getElementById('lessonAssessmentMessage');
+    if (message) {
+      const remaining = (module?.lesson.questions.length || 0) - answeredCount;
+      message.textContent = remaining > 0 ? `${remaining} question${remaining === 1 ? '' : 's'} still need an answer.` : '';
+    }
+
+    if (!this.saveLessonAssessmentState(moduleId, state)) {
+      const message = document.getElementById('lessonAssessmentMessage');
+      if (message) message.textContent = 'Your answers could not be saved on this device. Keep this page open until you submit.';
+    }
+  },
+
+  scrollToLessonAssessment() {
+    const resultHeading = document.getElementById('lesson-result-heading');
+    window.setTimeout(() => {
+      if (resultHeading) {
+        resultHeading.setAttribute('tabindex', '-1');
+        resultHeading.focus({ preventScroll: true });
+        resultHeading.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      } else {
+        document.getElementById('lesson-sec-evaluation')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        document.querySelector('#lessonContent .lesson-question input:not([disabled])')?.focus({ preventScroll: true });
+      }
+    }, 350);
+  },
+
+  retryLessonAssessment() {
+    const moduleId = this.state.lessonModuleId;
+    if (!moduleId) return;
+    const state = this.getLessonAssessmentState(moduleId);
+    state.draft = { answers: {}, reflection: state.draft.reflection || '', inProgress: true };
+    if (!this.saveLessonAssessmentState(moduleId, state)) {
+      HYDEV.Utils.toast.error('Could not save a new attempt on this device. Check available browser storage and try again.');
+      return;
+    }
+    this.renderLesson();
+    this.scrollToLessonAssessment();
+  },
+
+  submitDedicatedLessonAssessment() {
     const module = HYDEV.Curriculum?.getModules().find(item => item.id === this.state.lessonModuleId);
-    if (!module) return;
+    if (!module) {
+      HYDEV.Utils.toast.error('This lesson could not be loaded. Return to the curriculum and open it again.');
+      return;
+    }
 
-    const readiness = document.getElementById('lessonReadiness')?.value;
-    const confirmed = document.getElementById('lessonReadConfirm')?.checked;
-    const reflection = document.getElementById('lessonReflectionInput')?.value.trim() || '';
-    const answers = module.lesson.questions.map((question, index) =>
-      document.querySelector(`input[name="lesson-question-${index}"]:checked`)?.value
+    const questions = module.lesson.questions;
+    const answers = questions.map((_, index) =>
+      document.querySelector(`#lessonContent input[name="lesson-question-${index}"]:checked`)?.value
     );
-    const allAnswered = answers.every(a => a !== undefined);
+    const firstUnanswered = answers.findIndex(answer => answer === undefined);
+    const message = document.getElementById('lessonAssessmentMessage');
 
-    // These are readiness gates, not graded criteria -- failing one of
-    // them just blocks submission with a specific, actionable message.
-    // They must NEVER create an evidence record: a record whose score
-    // reflects the quiz but whose pass/fail reflects an unrelated
-    // checkbox is exactly the "scored 100 but shows as failed" confusion
-    // this replaces.
-    if (!confirmed) {
-      HYDEV.Utils.toast.error('Confirm you read the lesson and attempted both practice sections first.');
-      return;
-    }
-    if (!readiness || !module.skills.includes(readiness)) {
-      HYDEV.Utils.toast.error('Select the skill this lesson actually teaches in the readiness check.');
-      return;
-    }
-    if (reflection.length < 15) {
-      HYDEV.Utils.toast.error('Write a short reflection in your own words before submitting.');
-      return;
-    }
-    if (!allAnswered) {
-      HYDEV.Utils.toast.error(`Answer all ${module.lesson.questions.length} questions before submitting the final assessment.`);
+    if (firstUnanswered !== -1) {
+      const unanswered = questions
+        .map((_, index) => index)
+        .filter(index => answers[index] === undefined);
+      const questionWord = unanswered.length === 1 ? 'question' : 'questions';
+      if (message) {
+        message.textContent = `Answer ${unanswered.length} remaining ${questionWord} before submitting. The first unanswered item is question ${firstUnanswered + 1}.`;
+      }
+      const firstField = document.querySelector(`#lessonContent input[name="lesson-question-${firstUnanswered}"]`);
+      firstField?.closest('fieldset')?.setAttribute('aria-invalid', 'true');
+      firstField?.focus();
       return;
     }
 
-    // All gates satisfied -- this is a genuine submission. Compute the
-    // score and create exactly one evidence record; pass/fail is derived
-    // directly from that same score (>= 70, matching the platform's
-    // standard passing bar in data/config.json), so the two can never
-    // disagree the way they used to.
-    const criteria = module.lesson.questions.map((question, index) => ({
+    const criteria = questions.map((question, index) => ({
       name: question.prompt,
+      skill: question.skill,
+      objective: question.objective,
       passed: Number(answers[index]) === question.answer
     }));
     const correctCount = criteria.filter(item => item.passed).length;
     const score = Math.round((correctCount / criteria.length) * 100);
-    const passed = score >= 70;
+    const passThreshold = module.lesson.passThreshold || 70;
+    const passed = score >= passThreshold;
+    const state = this.getLessonAssessmentState(module.id);
+    const attempt = {
+      id: `${Date.now()}-${state.attempts.length + 1}`,
+      answers,
+      correctCount,
+      score,
+      passed,
+      submittedAt: new Date().toISOString(),
+      reflection: state.draft.reflection || '',
+      evidenceRecorded: false
+    };
 
-    HYDEV.Evidence?.add(`module-${module.id}`, score, passed, {
+    state.attempts.push(attempt);
+    state.draft.answers = Object.fromEntries(answers.map((answer, index) => [index, answer]));
+    state.draft.inProgress = false;
+    if (!this.saveLessonAssessmentState(module.id, state)) {
+      if (message) message.textContent = 'Your attempt could not be saved on this device. Free storage space before submitting again.';
+      HYDEV.Utils.toast.error('The assessment result could not be saved locally, so it was not recorded as evidence.');
+      return;
+    }
+
+    const evidenceRecorded = HYDEV.Evidence?.add(`module-${module.id}`, score, passed, {
       source: 'lesson_final_assessment',
+      attemptId: attempt.id,
       criteria,
+      answers,
+      passThreshold,
       assistanceLevel: 'A0',
-      reflection
+      reflection: attempt.reflection
     });
+
+    if (!evidenceRecorded) {
+      this.renderLesson();
+      HYDEV.Utils.toast.error('Your score was saved, but its evidence could not be recorded. The lesson was not unlocked; check browser storage and try again.');
+      return;
+    }
+
+    attempt.evidenceRecorded = true;
+    if (!this.saveLessonAssessmentState(module.id, state)) {
+      HYDEV.Utils.toast.error('The assessment evidence was recorded, but this device could not save the attempt history update.');
+    }
 
     if (passed) {
       HYDEV.Curriculum.markModuleStudied(module.id);
-      HYDEV.Utils.toast.success(`Final assessment submitted: ${score}/100 -- passed. The practical coding assessment is unlocked.`);
-    } else {
-      HYDEV.Utils.toast.error(`Final assessment submitted: ${score}/100 -- that's below the 70 needed to pass. Review the lesson and try again.`);
     }
 
     this.renderLesson();
@@ -802,6 +985,18 @@ HYDEV.App = {
     this.renderCurriculum();
     this.renderEvidence();
     this.updateUserUI();
+    const resultHeading = document.getElementById('lesson-result-heading');
+    resultHeading?.setAttribute('tabindex', '-1');
+    resultHeading?.focus({ preventScroll: true });
+    resultHeading?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    if (passed) {
+      const nextStep = module.lesson.isCodingPillar
+        ? 'Your lesson evidence is recorded and the practical coding assessment is unlocked.'
+        : 'Your lesson evidence is recorded; continue along your learning path when you are ready.';
+      HYDEV.Utils.toast.success(`Readiness check passed: ${score}%. ${nextStep}`);
+    } else {
+      HYDEV.Utils.toast.show(`Score: ${score}%. Review the answer explanations and try again; ${passThreshold}% is required to pass.`, 'info');
+    }
   },
 
   renderPillars() {
@@ -1041,83 +1236,175 @@ HYDEV.App = {
   renderLabs() {
     if (!HYDEV.Curriculum) return;
 
-    const challenges = HYDEV.Curriculum.getAllChallenges();
+    const challenges = HYDEV.Curriculum.getAllChallenges().filter(c => ['programming', 'debugging'].includes(c.pillarId));
     const list = document.getElementById('challengeList');
-    document.getElementById('challengeCount').textContent = challenges.length;
+    document.getElementById('challengeCount').textContent = `${challenges.length} labs`;
 
     if (!list) return;
 
     list.innerHTML = challenges.map(c => `
-      <div class="challenge-item ${c.completed ? 'completed' : ''}" data-challenge="${c.id}">
-        <div class="challenge-item-title">${c.title}</div>
-        <div class="challenge-item-meta">${c.pillar} · ${c.difficulty}</div>
-      </div>
+      <button type="button" class="challenge-item ${c.completed ? 'completed' : ''}" data-challenge="${c.id}" data-pillar="${c.pillarId}" aria-pressed="false">
+        <span class="challenge-item-header">
+          <div class="challenge-item-title">${c.title}</div>
+          <span class="challenge-item-pill">${c.completed ? 'Done' : c.difficulty}</span>
+        </span>
+        <span class="challenge-item-meta">${c.pillar} · ${c.lessonLabel || 'Core lab'}</span>
+      </button>
     `).join('');
 
     list.querySelectorAll('.challenge-item').forEach(item => {
+      const challenge = challenges.find(candidate => candidate.id === item.dataset.challenge);
+      item.dataset.search = [
+        challenge?.title,
+        challenge?.pillar,
+        challenge?.lessonLabel,
+        challenge?.summary,
+        challenge?.brief,
+        ...(challenge?.skills || []),
+        ...(challenge?.requirements || []),
+        ...(challenge?.hints || [])
+      ].filter(Boolean).join(' ').toLowerCase();
       item.addEventListener('click', () => {
         const id = item.getAttribute('data-challenge');
         this.selectChallenge(id);
-        list.querySelectorAll('.challenge-item').forEach(i => i.classList.remove('active'));
-        item.classList.add('active');
+        list.querySelectorAll('.challenge-item').forEach(i => {
+          const active = i === item;
+          i.classList.toggle('active', active);
+          i.setAttribute('aria-pressed', String(active));
+        });
       });
     });
 
-    // Re-rendering the list (e.g. after a submission updates completion
-    // badges) should not silently jump back to the first challenge and
-    // reset the editor to starter code -- that erases whatever the learner
-    // was working on. Only auto-select the first challenge the very first
-    // time, when nothing is selected yet.
+    this.filterLabs();
+
     const currentId = this.state.currentChallenge;
     const stillExists = currentId && challenges.some(c => c.id === currentId);
     if (stillExists) {
-      list.querySelector(`[data-challenge="${currentId}"]`)?.classList.add('active');
+      const currentItem = list.querySelector(`[data-challenge="${currentId}"]`);
+      currentItem?.classList.add('active');
+      currentItem?.setAttribute('aria-pressed', 'true');
     } else if (challenges.length > 0) {
       this.selectChallenge(challenges[0].id);
       list.firstElementChild?.classList.add('active');
+      list.firstElementChild?.setAttribute('aria-pressed', 'true');
+    }
+  },
+
+  filterLabs() {
+    const list = document.getElementById('challengeList');
+    if (!list) return;
+    const query = (document.getElementById('labSearch')?.value || '').trim().toLowerCase();
+    const activeFilter = document.querySelector('.lab-filter.active')?.getAttribute('data-lab-filter') || 'all';
+    let visibleCount = 0;
+    const visibleItems = [];
+
+    list.querySelectorAll('.challenge-item').forEach(item => {
+      const matchesPillar = activeFilter === 'all' || item.dataset.pillar === activeFilter;
+      const matchesQuery = !query || (item.dataset.search || item.textContent).includes(query);
+      const visible = matchesPillar && matchesQuery;
+      item.hidden = !visible;
+      if (visible) {
+        visibleCount += 1;
+        visibleItems.push(item);
+      }
+    });
+
+    const totalCount = list.querySelectorAll('.challenge-item').length;
+    const countLabel = document.getElementById('challengeCount');
+    if (countLabel) countLabel.textContent = query || activeFilter !== 'all'
+      ? `${visibleCount} of ${totalCount} labs`
+      : `${totalCount} labs`;
+
+    let emptyState = list.querySelector('.lab-list-empty');
+    if (visibleCount === 0) {
+      if (!emptyState) {
+        emptyState = document.createElement('p');
+        emptyState.className = 'lab-list-empty';
+        list.appendChild(emptyState);
+      }
+      emptyState.textContent = query
+        ? 'No labs match this search. Try another title or skill.'
+        : 'No labs are available for this filter yet.';
+    } else {
+      emptyState?.remove();
+      const activeItem = list.querySelector('.challenge-item.active');
+      if (!activeItem || activeItem.hidden) {
+        const nextItem = visibleItems[0];
+        list.querySelectorAll('.challenge-item').forEach(item => {
+          const active = item === nextItem;
+          item.classList.toggle('active', active);
+          item.setAttribute('aria-pressed', String(active));
+        });
+        this.selectChallenge(nextItem.dataset.challenge);
+      }
     }
   },
 
   selectChallenge(id) {
     const challenge = HYDEV.Curriculum.getChallenge(id);
-    if (!challenge) return;
+    if (!challenge || !['programming', 'debugging'].includes(challenge.pillarId)) return;
 
     HYDEV.AI?.resetAssistanceLevel();
     const levelSelect = document.getElementById('aiAssistanceLevel');
     if (levelSelect) levelSelect.value = 'A0';
 
+    const lessonLabel = challenge.lessonLabel || challenge.pillar || 'Core lab practice';
+
     document.getElementById('labChallengeTitle').textContent = challenge.title;
     document.getElementById('labPillarLabel').textContent = challenge.pillar;
+    document.getElementById('labDifficultyMeta').textContent = challenge.difficulty || 'Beginner';
+
     const languageSelect = document.getElementById('languageSelect');
     const selectedLanguage = languageSelect?.value || 'javascript';
     document.getElementById('editorLang').textContent = languageSelect?.options[languageSelect.selectedIndex]?.text || challenge.language || 'JavaScript';
 
     document.getElementById('challengeBrief').innerHTML = `
-      <h4>Objective</h4>
+      <div class="lab-brief-title-row">
+        <span class="lab-topic-tag">${challenge.pillar}</span>
+        <span class="lab-difficulty">${challenge.difficulty || 'Beginner'}</span>
+      </div>
+      <h2 class="lab-brief-title">${challenge.title}</h2>
+      <p class="lab-brief-summary">${challenge.summary || 'Practice this skill in a focused, runnable coding exercise.'}</p>
+      <div class="lab-related-lesson">
+        <span class="lab-brief-label">Related lesson</span>
+        <strong>${lessonLabel}</strong>
+        ${challenge.moduleId ? `<button class="lab-open-lesson" id="openLabLessonBtn" type="button">Review lesson <span aria-hidden="true">↗</span></button>` : ''}
+      </div>
+      ${challenge.skills?.length ? `<div class="lab-skill-tags">${challenge.skills.map(skill => `<span>${skill}</span>`).join('')}</div>` : ''}
+      <h3>What you’ll do</h3>
       <p>${challenge.brief}</p>
       ${challenge.expectedOutput ? `
-        <h4>Expected output</h4>
+        <h3>Check your result</h3>
+        <p class="lab-muted-copy">Your program should produce this output:</p>
         <pre class="expected-output">${challenge.expectedOutput}</pre>
       ` : challenge.conceptChecks?.length ? `
-        <p class="expected-output-note">This is open-ended -- there's no single expected output. Your code is evaluated against the 5 coding tasks below, not matched against a fixed answer.</p>
+        <p class="expected-output-note">This is open-ended. Your submission is reviewed against the task requirements rather than one fixed output.</p>
       ` : ''}
       ${challenge.conceptChecks?.length ? `
-        <h4>Lesson recap — 5 concept checks</h4>
+        <details class="lab-instruction-details">
+          <summary>Lesson recap <span>5 concept checks</span></summary>
         <ul>${challenge.conceptChecks.map(c => `<li>${c}</li>`).join('')}</ul>
-        <h4>Coding tasks — 5 required</h4>
-      ` : `<h4>Requirements</h4>`}
-      <ul>${(challenge.requirements || []).map(r => `<li>${r}</li>`).join('')}</ul>
+        </details>
+        <h3>Coding requirements</h3>
+      ` : `<h3>Requirements</h3>`}
+      <ul class="lab-requirements">${(challenge.requirements || []).map(r => `<li>${r}</li>`).join('')}</ul>
       ${challenge.teaching ? `
-        <div class="teaching-plan">
-          <h4>Recommended method: ${challenge.teaching.concept}</h4>
+        <details class="lab-instruction-details">
+          <summary>How to approach it <span>${challenge.teaching.concept}</span></summary>
           <ol>${challenge.teaching.steps.map(step => `<li>${step}</li>`).join('')}</ol>
           <p class="teaching-check"><b>Self-check:</b> ${challenge.teaching.selfCheck}</p>
           <p class="teaching-transfer"><b>Apply it:</b> ${challenge.teaching.transfer}</p>
-        </div>
+        </details>
       ` : ''}
-      ${challenge.hints?.length ? `<h4>Hints</h4><ul class="hints">${challenge.hints.map(h => `<li>${h}</li>`).join('')}</ul>` : ''}
+      ${challenge.hints?.length ? `
+        <details class="lab-instruction-details">
+          <summary>Need a hint? <span>${challenge.hints.length} available</span></summary>
+          <ul class="hints">${challenge.hints.map(h => `<li>${h}</li>`).join('')}</ul>
+        </details>
+      ` : ''}
     `;
 
+    document.getElementById('openLabLessonBtn')?.addEventListener('click', () => this.openLesson(challenge.moduleId));
     document.getElementById('codeEditor').value = this.getStarterCode(challenge, selectedLanguage);
     this.renderLanguageGuide(challenge, selectedLanguage);
     this.state.currentChallenge = id;
@@ -1126,42 +1413,32 @@ HYDEV.App = {
   renderLanguageGuide(challenge, language) {
     const guide = document.getElementById('languageGuide');
     if (!guide) return;
-    if (language !== 'kotlin') {
-      const examples = {
-        javascript: [
-          ['const value = 2 + 3;', 'Creates a value using JavaScript expression syntax.'],
-          ['console.log(value);', 'Writes the value to the execution output.']
-        ],
-        python: [
-          ['value = 2 + 3', 'Creates a value using Python assignment syntax.'],
-          ['print(value)', 'Writes the value to the execution output.']
+
+    const examples = language === 'kotlin'
+      ? (challenge.id === 'hello-world'
+        ? [
+          ['fun main() {', 'Defines the entry point that Kotlin runs first.'],
+          ['    println("Hello, World!")', 'Prints one line to the console.'],
+          ['}', 'Closes the main function.']
         ]
-      };
-      const lines = examples[language];
-      guide.hidden = !lines;
-      guide.innerHTML = lines ? `
-        <h4>${language === 'python' ? 'Python' : 'JavaScript'} annotated example</h4>
-        <p>Study the explanation here. The editable code area remains yours to write and run.</p>
-        <dl>${lines.map(([line, explanation]) => `<dt><code>${line}</code></dt><dd>${explanation}</dd>`).join('')}</dl>
-      ` : '';
-      return;
-    }
-    const kotlinExample = challenge.id === 'hello-world'
-      ? [
-        ['fun main() {', 'Defines the entry point that Kotlin runs first.'],
-        ['    println("Hello, World!")', 'Prints one line to the console.'],
-        ['}', 'Closes the main function.']
-      ]
+        : [
+          ['fun main() {', 'Defines the program entry point.'],
+          ['    // Write your solution here', 'This is a teaching note; it is not executable code.'],
+          ['}', 'Closes the function.']
+        ])
       : [
-        ['fun main() {', 'Defines the program entry point.'],
-        ['    // Write your solution here', 'This is a teaching note; it is not executable code.'],
-        ['}', 'Closes the function.']
+        ['const value = 2 + 3;', 'Creates a value using JavaScript expression syntax.'],
+        ['console.log(value);', 'Writes the value to the execution output.']
       ];
+
     guide.hidden = false;
     guide.innerHTML = `
-      <h4>Kotlin annotated example</h4>
-      <p>Use this explanation to learn the structure. The editable code area remains yours to write and run.</p>
-      <dl>${kotlinExample.map(([line, explanation]) => `<dt><code>${line}</code></dt><dd>${explanation}</dd>`).join('')}</dl>
+      <details class="language-guide-details">
+        <summary>${language === 'kotlin' ? 'Kotlin' : 'JavaScript'} quick reference</summary>
+        <h4>Annotated example</h4>
+        <p>Use this as a reference while you write your own solution.</p>
+        <dl>${examples.map(([line, explanation]) => `<dt><code>${line}</code></dt><dd>${explanation}</dd>`).join('')}</dl>
+      </details>
     `;
   },
 
@@ -1178,10 +1455,11 @@ HYDEV.App = {
       return pythonStarters[challenge.id] || `# ${challenge.title}\n\n`;
     }
     if (language !== 'kotlin') return challenge.id === 'hello-world'
-      ? 'console.log("Hello, World!");\n'
-      : challenge.starterCode || `// ${challenge.title}\n\n`;
+      ? '// Write your solution here\n'
+      : challenge.starterCodeByLanguage?.[language] || challenge.starterCode || `// ${challenge.title}\n\n`;
+    if (challenge.starterCodeByLanguage?.kotlin) return challenge.starterCodeByLanguage.kotlin;
     const kotlinStarters = {
-      'hello-world': 'fun main() {\n    println("Hello, World!")\n}\n',
+      'hello-world': '// Write your solution here\n',
       fizzbuzz: 'fun main() {\n    for (i in 1..100) {\n        // Add your FizzBuzz logic here\n    }\n}\n',
       palindrome: 'fun isPalindrome(value: String): Boolean {\n    // Your code here\n    return false\n}\n\nfun main() {\n    println(isPalindrome("racecar"))\n}\n',
       'find-bug': 'fun sumArray(values: List<Int>): Int {\n    var sum = 0\n    for (i in values.indices) {\n        sum += values[i]\n    }\n    return sum\n}\n\nfun main() {\n    println(sumArray(listOf(1, 2, 3, 4, 5)))\n}\n',
@@ -1258,7 +1536,15 @@ HYDEV.App = {
     if (challenge.judgeOutput) {
       return this.evaluateByExecution(challenge, code, language);
     }
-    return this.evaluateHeuristically(challenge, code, language);
+    const result = await this.runForGrading(language, code);
+    return {
+      verified: false,
+      score: null,
+      passed: false,
+      criteria: [],
+      runOutput: result.output || '',
+      runError: result.ok ? '' : (result.error || 'The code did not run successfully.')
+    };
   },
 
   async evaluateByExecution(challenge, code, language) {
@@ -1266,6 +1552,7 @@ HYDEV.App = {
 
     if (!result.ok) {
       return {
+        verified: true,
         score: 0,
         passed: false,
         criteria: [
@@ -1282,6 +1569,7 @@ HYDEV.App = {
     const matches = actual === expected;
 
     return {
+      verified: true,
       score: matches ? 100 : 0,
       passed: matches,
       criteria: [
@@ -1289,40 +1577,6 @@ HYDEV.App = {
         { name: 'Output matches the expected result exactly', passed: matches }
       ],
       runOutput: actual
-    };
-  },
-
-  // Open-ended module assessments have no single correct answer (they're
-  // rubric-graded, per HYDEV's evidence model), so they can't be exact-
-  // matched. This still requires the code to actually run without error
-  // as a baseline -- on top of the existing keyword-presence checks --
-  // which catches syntactically broken or crashing code that the old
-  // purely-textual heuristic would have happily passed.
-  async evaluateHeuristically(challenge, code, language) {
-    const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const skills = challenge.skills || [];
-    const primarySkill = skills[0] || '';
-    const secondarySkill = skills[1] || skills[0] || '';
-    const mentions = (skill) => !!skill && new RegExp(escapeRegex(skill), 'i').test(code);
-
-    const runResult = await this.runForGrading(language, code);
-
-    const criteria = [
-      { name: 'Code runs without errors', passed: !!runResult.ok },
-      { name: `demonstrates ${primarySkill || 'the primary skill'}`, passed: code.trim().length >= 20 && (mentions(primarySkill) || code.trim().length >= 60) },
-      { name: `also demonstrates ${secondarySkill || 'a second skill'}`, passed: mentions(secondarySkill) || secondarySkill === primarySkill },
-      { name: 'handles a boundary or failure case', passed: /\bif\s*\(|try\s*\{|catch\s*\(|null|undefined|empty|edge case|boundary/i.test(code) },
-      { name: 'includes a comment explaining the reasoning', passed: /\/\/|\/\*/.test(code) },
-      { name: 'looks like a real attempt, not just the starter template', passed: code.trim().length >= 40 }
-    ];
-    const passedCriteria = criteria.filter(c => c.passed).length;
-    const score = Math.round((passedCriteria / criteria.length) * 100);
-    return {
-      score,
-      passed: score >= 70 && runResult.ok, // a script that doesn't even run cannot pass, regardless of keyword score
-      criteria,
-      runOutput: runResult.output || '',
-      runError: runResult.ok ? '' : (runResult.error || '')
     };
   },
 
@@ -1351,10 +1605,32 @@ HYDEV.App = {
 
     HYDEV.Utils.toast.show('Running your code to evaluate it...', 'info');
     const evaluation = await this.evaluateCode(challenge, code, language);
-    HYDEV.Evidence?.add(challenge.id, evaluation.score, evaluation.passed, {
-     criteria: evaluation.criteria,
-     assistanceLevel: HYDEV.AI?.getAssistanceLevel?.() || 'A0'
+    const output = document.getElementById('codeOutput');
+    const status = document.getElementById('outputStatus');
+    if (output) output.textContent = evaluation.runError || evaluation.runOutput || 'The program ran without producing output.';
+    if (status) status.textContent = evaluation.runError ? 'Error' : 'Completed';
+
+    if (!evaluation.verified && !challenge.judgeOutput) {
+      if (evaluation.runError) {
+        HYDEV.Utils.toast.error(`Code did not run successfully: ${evaluation.runError.slice(0, 120)}`);
+      } else {
+        HYDEV.Utils.toast.show('Your code ran, but this open-ended task has no reliable automated grader yet. It was not recorded as validated evidence.', 'info');
+      }
+      return;
+    }
+
+    const recorded = HYDEV.Evidence?.add(challenge.id, evaluation.score, evaluation.passed, {
+      source: 'challenge_submission',
+      verified: true,
+      gradingMethod: 'exact-output',
+      passThreshold: 70,
+      criteria: evaluation.criteria,
+      assistanceLevel: HYDEV.AI?.getAssistanceLevel?.() || 'A0'
     });
+    if (!recorded) {
+      HYDEV.Utils.toast.error('The result could not be saved as evidence. Your challenge was not marked complete.');
+      return;
+    }
 
     if (evaluation.passed) {
      HYDEV.Curriculum?.completeChallenge(challenge.id);
@@ -1403,7 +1679,7 @@ HYDEV.App = {
         <div class="evidence-badge ${e.passed ? 'pass' : 'fail'}">${e.passed ? 'Pass' : 'Fail'}</div>
         <div class="evidence-content">
           <div class="evidence-title">${e.challengeTitle}</div>
-          <div class="evidence-meta">${e.pillar} · ${e.date} · assistance ${e.metadata?.assistanceLevel || 'A0'}</div>
+          <div class="evidence-meta">${e.pillar} · ${Number.isNaN(Date.parse(e.date)) ? e.date : new Date(e.date).toLocaleDateString()} · ${e.source === 'lesson_final_assessment' ? 'Lesson readiness check' : 'Verified code submission'} · assistance ${e.metadata?.assistanceLevel || 'A0'}</div>
         </div>
         <div class="evidence-score">${e.score.toFixed(1)}</div>
       </div>
